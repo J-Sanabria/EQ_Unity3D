@@ -1,5 +1,7 @@
 using UnityEngine;
 using CB.Balance;
+using UnityEngine.InputSystem;
+using System.Security.Cryptography;
 
 namespace CB.Core
 {
@@ -26,6 +28,16 @@ namespace CB.Core
         [SerializeField] bool showCursorInBalance = true;
         [SerializeField] bool showCursorInPause = true;
 
+        [SerializeField] PlayerInput playerInput;
+        [SerializeField] string explorationMap = "Gameplay";
+        [SerializeField] string balanceMap = "Balance";
+        [SerializeField] string pauseMap = "UI";
+
+
+        [Header("Actions (Input System)")]
+        [SerializeField] InputActionReference pauseActionExploration; // del mapa Exploration/Player
+        [SerializeField] InputActionReference resumeActionUI;
+
         public GameState State { get; private set; } = GameState.Exploration;
 
         // Estacion de balance activa (por si tienes varias)
@@ -38,17 +50,35 @@ namespace CB.Core
             ApplyState();
         }
 
-        void Update()
+        void OnEnable()
         {
-            // Tecla ESC: salir de Balance o abrir/cerrar Pausa
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                if (State == GameState.Balance) ExitBalance();
-                else if (State == GameState.Exploration) EnterPause();
-                else if (State == GameState.Pause) ExitPause();
-            }
+            Subscribe(pauseActionExploration, OnPausePerformed);
+            Subscribe(resumeActionUI, OnResumePerformed);
+        }
+        void OnDisable()
+        {
+            Unsubscribe(pauseActionExploration, OnPausePerformed);
+            Unsubscribe(resumeActionUI, OnResumePerformed);
         }
 
+        void Subscribe(InputActionReference a, System.Action<InputAction.CallbackContext> cb)
+        {
+            if (a != null && a.action != null) a.action.performed += cb;
+        }
+        void Unsubscribe(InputActionReference a, System.Action<InputAction.CallbackContext> cb)
+        {
+            if (a != null && a.action != null) a.action.performed -= cb;
+        }
+
+        void OnPausePerformed(InputAction.CallbackContext _)
+        {
+            if (State == GameState.Exploration) EnterPause();
+            else if (State == GameState.Balance) { /* no pausar desde aquí */ }
+        }
+        void OnResumePerformed(InputAction.CallbackContext _)
+        {
+            if (State == GameState.Pause) ExitPause();
+        }
         public void EnterBalance(BalanceStation station)
         {
             if (_transitionLock || station == null) return;
@@ -126,6 +156,25 @@ namespace CB.Core
                 case GameState.Pause:
                     SetCursor(showCursorInPause);
                     break;
+            }
+
+            if (playerInput != null)
+            {
+                switch (State)
+                {
+                    case GameState.Exploration:
+                        if (!string.IsNullOrEmpty(explorationMap))
+                            playerInput.SwitchCurrentActionMap(explorationMap);
+                        break;
+                    case GameState.Balance:
+                        if (!string.IsNullOrEmpty(balanceMap))
+                            playerInput.SwitchCurrentActionMap(balanceMap);
+                        break;
+                    case GameState.Pause:
+                        if (!string.IsNullOrEmpty(pauseMap))
+                            playerInput.SwitchCurrentActionMap(pauseMap);
+                        break;
+                }
             }
 
             // Aviso a la UI de balance (si existe) de la estación activa

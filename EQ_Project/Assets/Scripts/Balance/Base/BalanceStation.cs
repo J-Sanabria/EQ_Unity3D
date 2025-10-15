@@ -12,5 +12,15 @@ namespace CB.Balance
         public string[] RHS => reaction ? reaction.rhs : null;
         public int[] CoefL => reaction ? reaction.coefL : null;
         public int[] CoefR => reaction ? reaction.coefR : null;
+
+        public BalanceSessionController sessionUI;        // arrastra el del PanelEcuacionBalance
+        public BalanceVisualController balanceVisual;     // arrastra el de la balanza
+
+        void OnValidate()
+        {
+            // si ambas existen, vincula
+            if (balanceVisual != null && sessionUI != null)
+                balanceVisual.BindSession(sessionUI);
+        }
     }
 }

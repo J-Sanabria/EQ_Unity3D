@@ -1,6 +1,7 @@
 using UnityEngine;
-using CB.Core;      // GameModeController
-using CB.Balance;   // BalanceSessionController
+using UnityEngine.InputSystem;
+using CB.Core;
+using CB.Balance;
 
 public class BalanceInputController : MonoBehaviour
 {
@@ -8,16 +9,20 @@ public class BalanceInputController : MonoBehaviour
     [SerializeField] GameModeController gameMode;
     [SerializeField] BalanceSessionController session;
 
-    [Header("Audio opcional")]
+    [Header("Actions (del mapa 'Balance')")]
+    public InputActionReference moveLeft;
+    public InputActionReference moveRight;
+    public InputActionReference increase;
+    public InputActionReference decrease;
+    public InputActionReference verify;
+    public InputActionReference exitAction;
+
+    [Header("Audio (opcional)")]
     [SerializeField] AudioSource audioSource;
-    [SerializeField] AudioClip sfxInc;
-    [SerializeField] AudioClip sfxDec;
-    [SerializeField] AudioClip sfxMove;
-    [SerializeField] AudioClip sfxOk;
-    [SerializeField] AudioClip sfxError;
+    [SerializeField] AudioClip sfxInc, sfxDec, sfxMove, sfxOk, sfxError;
 
     int selSide = 0;   // 0 = izquierda, 1 = derecha
-    int selIndex = 0;  // índice dentro del lado
+    int selIndex = 0;
 
     void Reset()
     {
@@ -28,64 +33,104 @@ public class BalanceInputController : MonoBehaviour
 
     void OnEnable()
     {
-        // al entrar, alinea la selección con el primer término válido
+        EnableAction(moveLeft, OnMoveLeft);
+        EnableAction(moveRight, OnMoveRight);
+        EnableAction(increase, OnIncrease);
+        EnableAction(decrease, OnDecrease);
+        EnableAction(verify, OnVerify);
+        EnableAction(exitAction, OnExit);
+
         SnapSelection();
         Render();
     }
 
-    void Update()
+    void OnDisable()
     {
-        if (gameMode == null || gameMode.State != GameState.Balance) return;
-        if (session == null) return;
+        DisableAction(moveLeft, OnMoveLeft);
+        DisableAction(moveRight, OnMoveRight);
+        DisableAction(increase, OnIncrease);
+        DisableAction(decrease, OnDecrease);
+        DisableAction(verify, OnVerify);
+        DisableAction(exitAction, OnExit);
+    }
 
-        // Navegación horizontal: A/D
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            MoveLeft();
-        }
-        else if (Input.GetKeyDown(KeyCode.D))
-        {
-            MoveRight();
-        }
+    void EnableAction(InputActionReference aref, System.Action<InputAction.CallbackContext> cb)
+    {
+        if (aref == null || aref.action == null) return;
+        aref.action.performed += cb;
+        aref.action.Enable();
+    }
+    void DisableAction(InputActionReference aref, System.Action<InputAction.CallbackContext> cb)
+    {
+        if (aref == null || aref.action == null) return;
+        aref.action.performed -= cb;
+        aref.action.Disable();
+    }
 
-        // Ajuste de coeficiente: W/S
-        if (Input.GetKeyDown(KeyCode.W))
-        {
-            session.Adjust(selSide, selIndex, +1);
-            Play(sfxInc);
-            Render();
-        }
-        else if (Input.GetKeyDown(KeyCode.S))
-        {
-            session.Adjust(selSide, selIndex, -1);
-            Play(sfxDec);
-            Render();
-        }
+    // Callbacks
+    void OnMoveLeft(InputAction.CallbackContext ctx)
+    {
+        if (!InBalance()) return;
+        MoveLeft();
+    }
+    void OnMoveRight(InputAction.CallbackContext ctx)
+    {
+        if (!InBalance()) return;
+        MoveRight();
+    }
+    void OnIncrease(InputAction.CallbackContext ctx)
+    {
+        if (!InBalance()) return;
+        session.Adjust(selSide, selIndex, +1);
+        Play(sfxInc);
+        Render();
+    }
+    void OnDecrease(InputAction.CallbackContext ctx)
+    {
+        if (!InBalance()) return;
+        session.Adjust(selSide, selIndex, -1);
+        Play(sfxDec);
+        Render();
+    }
+    void OnVerify(InputAction.CallbackContext ctx)
+    {
+        if (!InBalance()) return;
 
-        // Verificar: Space
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            bool ok = session.IsBalancedNow();
-            if (ok)
-            {
-                Play(sfxOk);
-                // aquí luego haremos el “pasar nivel” o “confirmar balanceo”
-            }
-            else
-            {
-                session.errorCount++;
-                Play(sfxError);
-                // aquí luego dispararemos feedback visual (parpadeo rojo, etc.)
-            }
-        }
+        bool ok = session.IsBalancedNow();
 
-        // Salir del modo balance: Esc o E
-        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.E))
+        // feedback visual de la balanza
+        BalanceVisualController visual = null;
+        if (gameMode != null && gameMode.ActiveStation != null)
+            visual = gameMode.ActiveStation.balanceVisual;
+
+        if (ok)
         {
-            gameMode.ExitBalance();
+            Play(sfxOk);
+            if (visual != null) visual.OnVerify(true);
+
+            // NUEVO: cerrar desafío y disparar panel de resultado
+            session.CompleteChallenge();
+        }
+        else
+        {
+            session.errorCount++;
+            Play(sfxError);
+            if (visual != null) visual.OnVerify(false);
         }
     }
 
+    void OnExit(InputAction.CallbackContext ctx)
+    {
+        if (!InBalance()) return;
+        gameMode.ExitBalance();
+    }
+
+    bool InBalance()
+    {
+        return gameMode != null && gameMode.State == GameState.Balance && session != null;
+    }
+
+    // Navegación
     void MoveLeft()
     {
         int lCount = session.LeftCount;
@@ -93,17 +138,11 @@ public class BalanceInputController : MonoBehaviour
 
         if (selSide == 1 && rCount > 0)
         {
-            // estamos en derecha: retroceder dentro de derecha o saltar a izquierda
             if (selIndex > 0) selIndex--;
-            else
-            {
-                selSide = 0;
-                selIndex = Mathf.Max(0, lCount - 1);
-            }
+            else { selSide = 0; selIndex = Mathf.Max(0, lCount - 1); }
         }
         else if (selSide == 0 && lCount > 0)
         {
-            // estamos en izquierda
             selIndex = Mathf.Max(0, selIndex - 1);
         }
         Play(sfxMove);
@@ -117,17 +156,11 @@ public class BalanceInputController : MonoBehaviour
 
         if (selSide == 0 && lCount > 0)
         {
-            // estamos en izquierda: avanzar o saltar a derecha
             if (selIndex < lCount - 1) selIndex++;
-            else
-            {
-                selSide = 1;
-                selIndex = 0;
-            }
+            else { selSide = 1; selIndex = 0; }
         }
         else if (selSide == 1 && rCount > 0)
         {
-            // estamos en derecha
             selIndex = Mathf.Min(rCount - 1, selIndex + 1);
         }
         Play(sfxMove);
@@ -139,16 +172,8 @@ public class BalanceInputController : MonoBehaviour
         int lCount = session.LeftCount;
         int rCount = session.RightCount;
 
-        if (lCount > 0)
-        {
-            selSide = 0;
-            selIndex = Mathf.Clamp(selIndex, 0, lCount - 1);
-        }
-        else
-        {
-            selSide = 1;
-            selIndex = Mathf.Clamp(selIndex, 0, Mathf.Max(0, rCount - 1));
-        }
+        if (lCount > 0) { selSide = 0; selIndex = Mathf.Clamp(selIndex, 0, lCount - 1); }
+        else { selSide = 1; selIndex = Mathf.Clamp(selIndex, 0, Mathf.Max(0, rCount - 1)); }
     }
 
     void Render()

@@ -101,6 +101,17 @@ public class UserDB : MonoBehaviour
         Save();
     }
 
+    public void AddScore(int score)
+    {
+        var name = GetCurrentUser();
+        if (string.IsNullOrEmpty(name))
+        {
+            Debug.LogWarning("AddScore: no hay usuario actual (SetCurrentUser).");
+            return;
+        }
+        RecordScore(name, score);
+    }
+
     // ---------- Usuario actual ----------
     public void SetCurrentUser(string name) => PlayerPrefs.SetString(PREF_CURRENT_USER, name);
     public string GetCurrentUser() => PlayerPrefs.GetString(PREF_CURRENT_USER, "");
