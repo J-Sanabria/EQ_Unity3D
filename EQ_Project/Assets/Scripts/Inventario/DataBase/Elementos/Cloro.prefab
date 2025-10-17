@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: -6079101377704237311}
   - component: {fileID: -5596286085534228309}
   m_Layer: 0
-  m_Name: Hidroneno
+  m_Name: Cloro
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -122,8 +122,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4eda376c8cff46346be38449597dff27, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemId: H
-  displayName: Hidrogeno
+  itemId: Cl
+  displayName: Cloro
   amount: 1
   collectorLayers:
     serializedVersion: 2

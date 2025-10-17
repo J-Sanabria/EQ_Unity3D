@@ -40,6 +40,7 @@ namespace CB.Balance
         [Header("Inventario")]
         [SerializeField] PlayerInventory inventory;        // tu inventario de slots
         [SerializeField] InventoryDatabase database;      // para mapear símbolo -> item
+        [SerializeField] bool respectSubscripts = true;
         Dictionary<ItemDefinition, int> reserved = new Dictionary<ItemDefinition, int>(); // reserva temporal
 
 
@@ -73,7 +74,11 @@ namespace CB.Balance
             var rxn = Station.reaction;
             coefL = (int[])rxn.coefL.Clone();
             coefR = (int[])rxn.coefR.Clone();
+
+            for (int i = 0; i < coefL.Length; i++) if (coefL[i] < 1) coefL[i] = 1;
+            for (int i = 0; i < coefR.Length; i++) if (coefR[i] < 1) coefR[i] = 1;
         }
+
 
         public void Adjust(int side, int index, int delta)
         {
@@ -97,11 +102,12 @@ namespace CB.Balance
                 foreach (var kv in perUnit)
                 {
                     string elem = kv.Key;
-                    int need = kv.Value; // para +1 unidad
+                    int need = respectSubscripts ? kv.Value : 1;
                     var def = ItemForElement(elem);
                     if (def == null) { Debug.LogWarning("Sin item para elemento: " + elem); return; }
 
                     int libres = inventory != null ? inventory.CountOf(def) - ReservedOf(def) : 0;
+
                     if (libres < need) return; // NO alcanza -> rechaza
                 }
 
@@ -117,15 +123,21 @@ namespace CB.Balance
             }
             else // delta < 0
             {
-                if (cofs[index] <= 0) return;
+                // No permitir coeficientes en 0
+                if (cofs[index] <= 1) return;
 
-                // 4) Devolver de la reserva
+                // cuántas unidades puedes bajar sin pasar de 1
+                int canDown = Mathf.Min(-delta, cofs[index] - 1);
+
+                // devolver de la reserva equivalente a canDown unidades
+                perUnit = ChemFormula.Parse(species);
                 foreach (var kv in perUnit)
                 {
-                    var def = ItemForElement(kv.Key);
-                    AddReserve(def, -kv.Value);
+                    var def = ItemForElement(kv.Key); // tu helper actual
+                    AddReserve(def, -kv.Value * canDown);
                 }
-                cofs[index] -= 1;
+
+                cofs[index] -= canDown;
                 Render();
                 return;
             }
@@ -135,9 +147,15 @@ namespace CB.Balance
         public bool IsBalancedNow()
         {
             if (Station == null || Station.reaction == null) return false;
+
+            // todos >= 1
+            for (int i = 0; i < coefL.Length; i++) if (coefL[i] < 1) return false;
+            for (int i = 0; i < coefR.Length; i++) if (coefR[i] < 1) return false;
+
             var rxn = Station.reaction;
             return ReactionValidator.IsBalanced(rxn.lhs, rxn.rhs, coefL, coefR);
         }
+
 
         public void Render(int selectedSide = -1, int selectedIndex = -1)
         {
