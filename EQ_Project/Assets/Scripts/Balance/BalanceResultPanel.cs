@@ -1,14 +1,14 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;   // PlayerInput
 using CB.Balance;
 using CB.Core;
 
 public class BalanceResultPanel : MonoBehaviour
 {
-    [Header("Refs")]
+    [Header("UI")]
     [SerializeField] TMP_Text txtTitulo;
     [SerializeField] TMP_Text txtDetalle;
     [SerializeField] TMP_Text txtScore;
@@ -18,78 +18,107 @@ public class BalanceResultPanel : MonoBehaviour
     [Header("Opcional")]
     [SerializeField] GameModeController gameMode;
     [SerializeField] BalanceSessionController session;
-    [SerializeField] PlayerInput playerInput;       // el PlayerInput del jugador
-    [SerializeField] string uiMapName = "UI";       // nombre EXACTO del mapa UI
+    [SerializeField] PlayerInput playerInput;
+    [SerializeField] string uiMapName = "UI";
 
-    string _prevMap;
+    [Header("Apagar mientras está abierto")]
+    [SerializeField] GameObject[] hideWhileOpen;
 
-    void Reset()
-    {
-        if (gameMode == null) gameMode = FindObjectOfType<GameModeController>();
-        if (session == null) session = FindObjectOfType<BalanceSessionController>();
-        if (playerInput == null) playerInput = FindObjectOfType<PlayerInput>();
-    }
+    string prevMap;
+    bool[] prevActives;
 
+    // No hagas nada aquí que dependa de estar activo/inactivo
     void Awake()
     {
-        if (gameMode == null) gameMode = FindObjectOfType<GameModeController>();
-        if (session == null) session = FindObjectOfType<BalanceSessionController>();
-        if (playerInput == null) playerInput = FindObjectOfType<PlayerInput>();
-
-        if (btnContinuar) btnContinuar.onClick.AddListener(OnContinuar);
-        if (btnReintentar) btnReintentar.onClick.AddListener(OnReintentar);
-
-        if (session != null) session.OnChallengeCompleted += OnCompleted;
-
-        gameObject.SetActive(false);
+        if (gameMode == null) gameMode = FindFirstObjectByType<GameModeController>();
+        if (session == null) session = FindFirstObjectByType<BalanceSessionController>();
+        if (playerInput == null) playerInput = FindFirstObjectByType<PlayerInput>();
+        // NO hagas SetActive(false) aquí si el objeto ya está desactivado en el Inspector.
     }
 
-    void OnDestroy()
+    // Se llama cada vez que el panel se muestra (SetActive(true))
+    void OnEnable()
     {
-        if (session != null) session.OnChallengeCompleted -= OnCompleted;
+        if (btnContinuar != null)
+        {
+            btnContinuar.onClick.RemoveListener(OnContinuar);
+            btnContinuar.onClick.AddListener(OnContinuar);
+        }
+        if (btnReintentar != null)
+        {
+            btnReintentar.onClick.RemoveListener(OnReintentar);
+            btnReintentar.onClick.AddListener(OnReintentar);
+        }
     }
 
-    void OnCompleted(BalanceResult r)
+    void OnDisable()
     {
-        // guarda puntaje (opcional)
-        try { if (UserDB.Instance != null) UserDB.Instance.AddScore(r.score); } catch { }
+        // Limpia listeners para no duplicarlos si se vuelve a abrir
+        if (btnContinuar != null) btnContinuar.onClick.RemoveListener(OnContinuar);
+        if (btnReintentar != null) btnReintentar.onClick.RemoveListener(OnReintentar);
+    }
 
+    public void Show(BalanceResult r)
+    {
         if (txtTitulo) txtTitulo.text = "¡Ecuación balanceada!";
         if (txtDetalle) txtDetalle.text = "Tiempo: " + Mathf.RoundToInt(r.timeSeconds) + " s   Errores: " + r.errors;
         if (txtScore) txtScore.text = "Puntaje: " + r.score;
 
-        // switch a UI y seleccionar primer botón
-        if (playerInput != null && !string.IsNullOrEmpty(uiMapName))
+        // Cambia al mapa UI (para navegación con teclado/gamepad)
+        if (playerInput && !string.IsNullOrEmpty(uiMapName))
         {
-            _prevMap = playerInput.currentActionMap != null ? playerInput.currentActionMap.name : "";
+            prevMap = playerInput.currentActionMap != null ? playerInput.currentActionMap.name : "";
             playerInput.SwitchCurrentActionMap(uiMapName);
         }
 
-        gameObject.SetActive(true);
+        // Cursor visible para UI
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
 
-        // fija el foco en el botón Continuar
-        if (btnContinuar != null)
-            EventSystem.current?.SetSelectedGameObject(btnContinuar.gameObject);
+        // Apaga HUDs y recuerda estado
+        if (hideWhileOpen != null && hideWhileOpen.Length > 0)
+        {
+            prevActives = new bool[hideWhileOpen.Length];
+            for (int i = 0; i < hideWhileOpen.Length; i++)
+            {
+                if (hideWhileOpen[i] == null) continue;
+                prevActives[i] = hideWhileOpen[i].activeSelf;
+                hideWhileOpen[i].SetActive(false);
+            }
+        }
+
+        // Mostrar panel (si estaba desactivado en el Inspector)
+        gameObject.SetActive(true);
     }
 
-    void RestorePrevMap()
+    void RestoreEnv()
     {
-        if (playerInput != null && !string.IsNullOrEmpty(_prevMap))
-            playerInput.SwitchCurrentActionMap(_prevMap);
-        _prevMap = null;
+        if (playerInput && !string.IsNullOrEmpty(prevMap))
+            playerInput.SwitchCurrentActionMap(prevMap);
+        prevMap = null;
+
+        if (hideWhileOpen != null && prevActives != null)
+        {
+            for (int i = 0; i < hideWhileOpen.Length; i++)
+            {
+                if (hideWhileOpen[i] == null) continue;
+                hideWhileOpen[i].SetActive(prevActives[i]);
+            }
+        }
+        prevActives = null;
     }
 
     void OnContinuar()
     {
         gameObject.SetActive(false);
-        RestorePrevMap();
-        if (gameMode != null) gameMode.ExitBalance();
+        RestoreEnv();
+        if (gameMode) gameMode.ExitBalance();
     }
 
     void OnReintentar()
     {
         gameObject.SetActive(false);
-        RestorePrevMap();
-        if (session != null) session.RestartChallenge();
+        RestoreEnv();
+        if (session) session.RestartChallenge();
     }
 }

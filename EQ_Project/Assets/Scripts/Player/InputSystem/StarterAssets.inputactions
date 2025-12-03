@@ -495,6 +495,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Point",
+                    "type": "Value",
+                    "id": "b28326a2-9b5d-49f8-92ef-1b54f5fdf7f6",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -543,7 +552,7 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "2D Vector",
+                    "name": "wsad",
                     "id": "61241409-3f70-441e-86d8-21ab2d8d6d48",
                     "path": "2DVector",
                     "interactions": "",
@@ -598,7 +607,7 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "2D Vector",
+                    "name": "arrows",
                     "id": "b3e52094-1914-4afa-9619-4af427d5cd4e",
                     "path": "2DVector",
                     "interactions": "",
@@ -651,6 +660,17 @@
                     "action": "Navigate",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "fa3fb8ce-a112-4216-88a5-ea2d285eba2d",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Point",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

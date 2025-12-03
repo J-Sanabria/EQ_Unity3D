@@ -28,6 +28,7 @@ namespace CB.Balance
         bool running;
 
         [Header("Puntaje")]
+        
         [Tooltip("Puntaje base si acierta")]
         public int baseScore = 1000;
         [Tooltip("Penalización por cada error (fallo al verificar)")]
@@ -36,6 +37,8 @@ namespace CB.Balance
         public int penaltyPerSecond = 2;
         [Tooltip("Puntaje mínimo")]
         public int minScore = 0;
+
+        [SerializeField] BalanceResultPanel resultPanel; // arrástralo en el Inspector
 
         [Header("Inventario")]
         [SerializeField] PlayerInventory inventory;        // tu inventario de slots
@@ -204,6 +207,25 @@ namespace CB.Balance
                 errors = errorCount,
                 score = score
             };
+
+            // Guardar puntaje en UserDB (si hay usuario actual)
+            if (UserDB.Instance != null)
+            {
+                if (UserDB.Instance.HasCurrentUser())
+                {
+                    UserDB.Instance.AddScore(score); // guarda r.score
+                }
+                else
+                {
+                    Debug.LogWarning("No hay usuario actual (SetCurrentUser) — no se guardó el puntaje.");
+                }
+            }
+            // Mostrar panel directamente
+            if (resultPanel != null)
+            {
+                resultPanel.Show(result);
+            }
+
 
             OnChallengeCompleted?.Invoke(result);
         }

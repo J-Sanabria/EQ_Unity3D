@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: Zn
   displayName: Zinc
-  icon: {fileID: 21300000, guid: b0fa70abd2a79904cb00b175dfd8ec7e, type: 3}
+  icon: {fileID: 1566933321, guid: 9b282b84ed88c6445970a4f4f875fc2f, type: 3}
   maxStack: 99

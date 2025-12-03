@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using CB.Core;
 using CB.Balance;
 
+
 public class BalanceInputController : MonoBehaviour
 {
     [Header("Refs")]
@@ -110,7 +111,9 @@ public class BalanceInputController : MonoBehaviour
 
             // NUEVO: cerrar desafío y disparar panel de resultado
             session.CompleteChallenge();
+   
         }
+        
         else
         {
             session.errorCount++;
@@ -126,8 +129,11 @@ public class BalanceInputController : MonoBehaviour
     }
 
     bool InBalance()
+
     {
+        Debug.Log("In Balance check");
         return gameMode != null && gameMode.State == GameState.Balance && session != null;
+
     }
 
     // Navegación

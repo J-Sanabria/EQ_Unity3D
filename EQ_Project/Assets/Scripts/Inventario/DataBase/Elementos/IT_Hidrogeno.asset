@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: H
   displayName: Hidrogeno
-  icon: {fileID: 413811973, guid: 511eca0af372dc74daa2ab57753b8f84, type: 3}
+  icon: {fileID: -396142768, guid: 48a5fca4213374a4fa1d8fd5bd96f89b, type: 3}
   maxStack: 99
