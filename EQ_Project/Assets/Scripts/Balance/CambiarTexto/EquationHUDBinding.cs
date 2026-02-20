@@ -1,55 +1,106 @@
 using UnityEngine;
-using CB.Core;      // GameModeController
-using CB.Balance;   // BalanceStation
+using System.Collections.Generic;
+using CB.Balance;
 
 public class EquationHUDBinding : MonoBehaviour
 {
-    [Header("Refs")]
-    [SerializeField] GameModeController gameMode;    // arrástralo
-    [SerializeField] EquationHUD hud;                // arrástralo (el script que ya tienes)
-    [SerializeField] ReactionAsset explorationReaction; // lo que quieres ver en Exploración
+    [Header("HUDs")]
+    [SerializeField] EquationHUD explorationHUD;
+    [SerializeField] EquationHUD balanceHUD;
 
-    // cache simple para no re-renderizar sin cambios
-    BalanceStation _lastStation;
-    ReactionAsset _lastAsset;
+    BalanceSessionController session;
+    BalanceSelectionController selection;
 
-    void Reset()
+    ReactionAsset reaction;
+
+    void OnEnable()
     {
-        if (hud == null) hud = GetComponentInChildren<EquationHUD>();
-        if (gameMode == null) gameMode = FindObjectOfType<GameModeController>();
+        if (selection != null)
+            selection.OnSelectionChanged += OnSelectionChanged;
+
+        if (session != null)
+            session.OnEquationChanged += Refresh;
     }
 
-    void LateUpdate()
+    void OnDisable()
     {
-        // 1) decidir qué reacción mostrar
-        ReactionAsset assetToShow = null;
+        if (selection != null)
+            selection.OnSelectionChanged -= OnSelectionChanged;
 
-        if (gameMode != null && gameMode.State == GameState.Balance && gameMode.ActiveStation != null)
+        if (session != null)
+            session.OnEquationChanged -= Refresh;
+    }
+
+    public void Bind(
+        BalanceSessionController s,
+        BalanceSelectionController sel)
+    {
+        session = s;
+        selection = sel;
+
+        if (selection != null)
+            selection.OnSelectionChanged += OnSelectionChanged;
+
+        if (session != null)
+            session.OnEquationChanged += Refresh;
+
+        reaction = session?.Station?.reaction;
+        Refresh();
+    }
+
+    public void SetReaction(ReactionAsset rxn)
+    {
+        reaction = rxn;
+        Refresh();
+    }
+
+    void OnSelectionChanged(int _, int __)
+    {
+        Refresh();
+    }
+
+    void Refresh()
+    {
+        if (reaction == null)
+            return;
+
+        int[] coefL = session != null ? session.coefL : reaction.coefL;
+        int[] coefR = session != null ? session.coefR : reaction.coefR;
+
+        HashSet<string> badElements = null;
+
+        if (session != null)
         {
-            assetToShow = gameMode.ActiveStation.reaction;
+            var bad = ReactionValidator.Imbalance(
+                reaction.lhs,
+                reaction.rhs,
+                coefL,
+                coefR
+            );
+
+            badElements = new HashSet<string>();
+            foreach (var kv in bad)
+                if (kv.Value != 0)
+                    badElements.Add(kv.Key);
         }
-        else
+
+        Render(explorationHUD, highlight: false);
+        Render(balanceHUD, highlight: true);
+
+        void Render(EquationHUD hud, bool highlight)
         {
-            assetToShow = explorationReaction;
-        }
+            if (hud == null) return;
 
-        // 2) si no hay cambios, no hagas nada
-        if (assetToShow == _lastAsset && gameMode.ActiveStation == _lastStation) return;
-
-        _lastAsset = assetToShow;
-        _lastStation = gameMode != null ? gameMode.ActiveStation : null;
-
-        // 3) renderizar
-        if (hud != null && assetToShow != null)
-        {
             hud.SetEquation(
-                assetToShow.lhs,
-                assetToShow.rhs,
-                assetToShow.coefL,
-                assetToShow.coefR,
-                selectedSide: -1,
-                selectedIndex: -1
+                reaction.lhs,
+                reaction.rhs,
+                coefL,
+                coefR,
+                highlight && selection != null ? selection.SelectedSide : -1,
+                highlight && selection != null ? selection.SelectedIndex : -1,
+                badElements
             );
         }
     }
+
 }

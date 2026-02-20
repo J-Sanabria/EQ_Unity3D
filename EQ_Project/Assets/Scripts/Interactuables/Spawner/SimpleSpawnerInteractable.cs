@@ -1,5 +1,7 @@
 using UnityEngine;
-using TMPro; // IMPORTANTE
+using TMPro;
+using static UnityEditor.Progress;
+
 
 public class SimpleSpawnerInteractable : Interactable
 {
@@ -13,29 +15,46 @@ public class SimpleSpawnerInteractable : Interactable
     public int minAmount = 1;
     public int maxAmount = 99;
 
+    ItemDefinition item;
+
+    [Header("Base de datos")]
+    [SerializeField] InventoryDatabase inventoryDatabase;
+
     [Header("UI opcional")]
     [SerializeField] TMP_Text amountLabel; // TextMesh Pro (UGUI o 3D)
+    [SerializeField] SpriteRenderer elementIcon; 
 
     float timer;
-
     void Update()
     {
-        if (timer > 0f) timer -= Time.deltaTime;
+        if (timer > 0f)
+            timer -= Time.deltaTime;
     }
 
+    public void Configure(ItemDefinition def)
+    {
+        item = def;
+
+        if (item == null || item.collectiblePrefab == null)
+        {
+            gameObject.SetActive(false);
+            return;
+        }
+
+        gameObject.SetActive(true);
+        RefreshUI();
+        RefreshElementUI();
+    }
     public override void Interact(Transform interactor)
     {
-        if (prefab == null) return;
+        if (item == null || item.collectiblePrefab == null) return;
         if (timer > 0f) return;
 
         Vector3 pos = spawnPoint ? spawnPoint.position : transform.position;
         Quaternion rot = spawnPoint ? spawnPoint.rotation : transform.rotation;
 
-        var go = Instantiate(prefab, pos, rot);
-
-        var col = go.GetComponent<Collectible>();
-        if (col != null)
-            col.amount = Mathf.Clamp(spawnAmount, minAmount, maxAmount);
+        var col = Instantiate(item.collectiblePrefab, pos, rot);
+        col.amount = Mathf.Clamp(spawnAmount, minAmount, maxAmount);
 
         timer = cooldown;
     }
@@ -56,17 +75,27 @@ public class SimpleSpawnerInteractable : Interactable
     {
         spawnAmount = Mathf.Clamp(spawnAmount, minAmount, maxAmount);
         RefreshUI();
+        RefreshElementUI();
     }
 
     void Start()
     {
         RefreshUI();
+        RefreshElementUI();
     }
 
     void RefreshUI()
     {
         if (amountLabel != null)
-            amountLabel.SetText("x{0}", spawnAmount); // TMP: más eficiente que .text
+            amountLabel.SetText("x{0}", spawnAmount);
+    }
+
+    void RefreshElementUI()
+    {
+        if (elementIcon == null) return;
+
+        elementIcon.sprite = item.icon;
+        elementIcon.enabled = item.icon != null;
     }
 
     // Prompt dinámico (opcional)

@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: H
   displayName: Hidrogeno
+  collectiblePrefab: {fileID: -6079101377704237311, guid: a8d299956eb4f3944bad6fc8f8cab5f3, type: 3}
   icon: {fileID: -396142768, guid: 48a5fca4213374a4fa1d8fd5bd96f89b, type: 3}
   maxStack: 99

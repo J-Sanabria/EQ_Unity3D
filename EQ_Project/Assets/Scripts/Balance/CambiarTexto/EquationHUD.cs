@@ -2,7 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Text;
 using System.Collections.Generic;
-using CB.Balance; // para ChemFormula.Parse
+using CB.Balance;
 
 public class EquationHUD : MonoBehaviour
 {
@@ -10,16 +10,24 @@ public class EquationHUD : MonoBehaviour
     [SerializeField] TMP_Text text;
 
     [Header("Colores")]
-    [SerializeField] string badHex = "#FF5555";   // color para especies con elementos desbalanceados
+    [SerializeField] string badHex = "#FF5555";
 
-    // badElements: elementos cuyo balance  0 (ej. { "H", "O" })
-    public void SetEquation(string[] lhs, string[] rhs, int[] coefL, int[] coefR,
-                            int selectedSide = -1, int selectedIndex = -1,
-                            HashSet<string> badElements = null)
+    ReactionAsset current;
+
+    public void SetEquation(
+        string[] lhs,
+        string[] rhs,
+        int[] coefL,
+        int[] coefR,
+        int selectedSide = -1,
+        int selectedIndex = -1,
+        HashSet<string> badElements = null)
     {
-        if (text == null) return;
+        if (text == null || lhs == null || rhs == null)
+            return;
 
         var sb = new StringBuilder(128);
+
         BuildSide(sb, lhs, coefL, selectedSide == 0 ? selectedIndex : -1, badElements);
         sb.Append("  \u2192  ");
         BuildSide(sb, rhs, coefR, selectedSide == 1 ? selectedIndex : -1, badElements);
@@ -28,44 +36,71 @@ public class EquationHUD : MonoBehaviour
         text.text = sb.ToString();
     }
 
-    void BuildSide(StringBuilder sb, string[] species, int[] coefs, int highlightIndex, HashSet<string> badElements)
+    public void Clear()
+    {
+        if (text != null)
+            text.text = string.Empty;
+    }
+
+    void BuildSide(
+        StringBuilder sb,
+        string[] species,
+        int[] coefs,
+        int highlightIndex,
+        HashSet<string> badElements)
     {
         for (int i = 0; i < species.Length; i++)
         {
             if (i > 0) sb.Append(" + ");
 
-            int c = (coefs != null && i < coefs.Length) ? coefs[i] : 1;
+            int coef = (coefs != null && i < coefs.Length) ? Mathf.Max(1, coefs[i]) : 1;
             string formula = ChemTextUtil.ToTMPFormula(species[i]);
 
-            bool isBad = SpeciesTouchesBad(species[i], badElements);
+            bool isBad = IsSpeciesBad(species[i], badElements);
 
             if (highlightIndex == i)
             {
                 sb.Append("<mark=#00000055>");
-                if (c != 1) sb.Append("<b>").Append(c).Append("</b>").Append(' ');
-                if (isBad) sb.Append("<color=").Append(badHex).Append('>');
-                sb.Append("<b>").Append(formula).Append("</b>");
-                if (isBad) sb.Append("</color>");
+                AppendSpecies(sb, coef, formula, isBad, bold: true);
                 sb.Append("</mark>");
             }
             else
             {
-                if (c != 1) sb.Append(c).Append(' ');
-                if (isBad) sb.Append("<color=").Append(badHex).Append('>');
-                sb.Append(formula);
-                if (isBad) sb.Append("</color>");
+                AppendSpecies(sb, coef, formula, isBad, bold: false);
             }
         }
     }
 
-    bool SpeciesTouchesBad(string species, HashSet<string> badElements)
+    void AppendSpecies(
+        StringBuilder sb,
+        int coef,
+        string formula,
+        bool isBad,
+        bool bold)
     {
-        if (badElements == null || badElements.Count == 0 || string.IsNullOrEmpty(species))
+        if (coef != 1)
+            sb.Append(bold ? "<b>" + coef + "</b> " : coef + " ");
+
+        if (isBad)
+            sb.Append("<color=").Append(badHex).Append('>');
+
+        if (bold) sb.Append("<b>");
+        sb.Append(formula);
+        if (bold) sb.Append("</b>");
+
+        if (isBad)
+            sb.Append("</color>");
+    }
+
+    bool IsSpeciesBad(string species, HashSet<string> badElements)
+    {
+        if (badElements == null || badElements.Count == 0)
             return false;
 
-        var elems = ChemFormula.Parse(species);
-        foreach (var k in elems.Keys)
-            if (badElements.Contains(k)) return true;
+        var parsed = ChemFormula.Parse(species);
+        foreach (var elem in parsed.Keys)
+            if (badElements.Contains(elem))
+                return true;
 
         return false;
     }

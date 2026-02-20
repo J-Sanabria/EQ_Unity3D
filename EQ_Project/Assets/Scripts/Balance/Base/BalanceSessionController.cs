@@ -1,6 +1,6 @@
 using UnityEngine;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 
 namespace CB.Balance
 {
@@ -13,192 +13,185 @@ namespace CB.Balance
         public int score;
     }
 
-    public class BalanceSessionController : MonoBehaviour, IBalanceUIScreen
-    {
-        [Header("UI")]
-        [SerializeField] EquationHUD equationHUD;
 
+    public class BalanceSessionController : MonoBehaviour
+    {
         [Header("Estado")]
         public int[] coefL;
         public int[] coefR;
 
         [Header("Progreso")]
-        public int errorCount = 0;
-        public float elapsed;                   // tiempo en modo Balance
+        public int errorCount;
+        public float elapsed;
         bool running;
 
-        [Header("Puntaje")]
-        
-        [Tooltip("Puntaje base si acierta")]
-        public int baseScore = 1000;
-        [Tooltip("Penalización por cada error (fallo al verificar)")]
-        public int penaltyPerError = 100;
-        [Tooltip("Penalización por segundo")]
-        public int penaltyPerSecond = 2;
-        [Tooltip("Puntaje mínimo")]
-        public int minScore = 0;
-
-        [SerializeField] BalanceResultPanel resultPanel; // arrástralo en el Inspector
+        [Header("Score")]
+        [SerializeField] int baseScore = 1000;
+        [SerializeField] int penaltyPerError = 100;
+        [SerializeField] int minScore = 0;
 
         [Header("Inventario")]
-        [SerializeField] PlayerInventory inventory;        // tu inventario de slots
-        [SerializeField] InventoryDatabase database;      // para mapear símbolo -> item
+        [SerializeField] PlayerInventory inventory;
+        [SerializeField] InventoryDatabase database;
         [SerializeField] bool respectSubscripts = true;
-        Dictionary<ItemDefinition, int> reserved = new Dictionary<ItemDefinition, int>(); // reserva temporal
 
+        Dictionary<ItemDefinition, int> reserved = new();
 
         public BalanceStation Station { get; private set; }
 
-        public event Action<BalanceResult> OnChallengeCompleted;
+        public event Action<BalanceResult> OnSessionCompleted;
+        public event Action OnEquationChanged;
 
-        public void BindStation(BalanceStation s)
-        {
-            Station = s;
 
-            if (inventory == null) inventory = FindObjectOfType<PlayerInventory>();
-            if (database == null && inventory != null) database = inventory.database;
-
-            reserved.Clear();
-
-            InitFromStation();
-            errorCount = 0;
-            elapsed = 0f;
-            running = true;
-            Render();
-        }
         void Update()
         {
-            if (running) elapsed += Time.deltaTime;
+            if (running)
+                elapsed += Time.deltaTime;
         }
 
-        void InitFromStation()
+        // -------------------------
+        // Inicialización
+        // -------------------------
+        public void BindStation(BalanceStation station)
         {
-            if (Station == null || Station.reaction == null) { coefL = coefR = null; return; }
-            var rxn = Station.reaction;
-            coefL = (int[])rxn.coefL.Clone();
-            coefR = (int[])rxn.coefR.Clone();
+            Station = station;
 
-            for (int i = 0; i < coefL.Length; i++) if (coefL[i] < 1) coefL[i] = 1;
-            for (int i = 0; i < coefR.Length; i++) if (coefR[i] < 1) coefR[i] = 1;
+            if (inventory == null)
+                inventory = FindObjectOfType<PlayerInventory>();
+
+            if (database == null && inventory != null)
+                database = inventory.database;
+
+            InitFromReaction();
+            ResetMetrics();
+            running = true;
         }
 
+        void InitFromReaction()
+        {
+            if (Station == null || Station.reaction == null)
+                return;
 
+            coefL = (int[])Station.reaction.coefL.Clone();
+            coefR = (int[])Station.reaction.coefR.Clone();
+
+            for (int i = 0; i < coefL.Length; i++)
+                coefL[i] = Mathf.Max(1, coefL[i]);
+
+            for (int i = 0; i < coefR.Length; i++)
+                coefR[i] = Mathf.Max(1, coefR[i]);
+
+            reserved.Clear();
+            OnEquationChanged?.Invoke();
+        }
+
+        void ResetMetrics()
+        {
+            errorCount = 0;
+            elapsed = 0f;
+        }
+
+        // -------------------------
+        // Interacción
+        // -------------------------
         public void Adjust(int side, int index, int delta)
         {
-            if (delta == 0) return;
-            if (Station == null || Station.reaction == null) return;
+            if (!running || Station == null || Station.reaction == null)
+                return;
 
-            string[] list = side == 0 ? Station.reaction.lhs : Station.reaction.rhs;
-            int[] cofs = side == 0 ? coefL : coefR;
+            var species = side == 0
+                ? Station.reaction.lhs
+                : Station.reaction.rhs;
 
-            if (list == null || cofs == null) return;
-            if (index < 0 || index >= list.Length) return;
+            var coefs = side == 0 ? coefL : coefR;
 
-            string species = list[index];
+            if (index < 0 || index >= species.Length)
+                return;
 
-            // 1) Parseo estequiométrico por unidad (H2O -> H:2, O:1)
-            var perUnit = ChemFormula.Parse(species); // Dictionary<string,int>
+            int before = coefs[index];
 
             if (delta > 0)
+                TryIncrease(species[index], coefs, index);
+            else if (delta < 0)
+                TryDecrease(species[index], coefs, index);
+
+            if (coefs[index] != before)
+                OnEquationChanged?.Invoke();
+        }
+
+        void TryIncrease(string formula, int[] coefs, int index)
+        {
+            var perUnit = ChemFormula.Parse(formula);
+
+            foreach (var kv in perUnit)
             {
-                // 2) Verificar inventario disponible por elemento
-                foreach (var kv in perUnit)
-                {
-                    string elem = kv.Key;
-                    int need = respectSubscripts ? kv.Value : 1;
-                    var def = ItemForElement(elem);
-                    if (def == null) { Debug.LogWarning("Sin item para elemento: " + elem); return; }
+                var def = ItemForElement(kv.Key);
+                int need = respectSubscripts ? kv.Value : 1;
 
-                    int libres = inventory != null ? inventory.CountOf(def) - ReservedOf(def) : 0;
+                if (def == null)
+                    return;
 
-                    if (libres < need) return; // NO alcanza -> rechaza
-                }
-
-                // 3) Reservar y aplicar
-                foreach (var kv in perUnit)
-                {
-                    var def = ItemForElement(kv.Key);
-                    AddReserve(def, kv.Value);
-                }
-                cofs[index] += 1;
-                Render();
-                return;
+                int available = inventory.CountOf(def) - ReservedOf(def);
+                if (available < need)
+                    return;
             }
-            else // delta < 0
-            {
-                // No permitir coeficientes en 0
-                if (cofs[index] <= 1) return;
 
-                // cuántas unidades puedes bajar sin pasar de 1
-                int canDown = Mathf.Min(-delta, cofs[index] - 1);
+            foreach (var kv in perUnit)
+                AddReserve(ItemForElement(kv.Key), kv.Value);
 
-                // devolver de la reserva equivalente a canDown unidades
-                perUnit = ChemFormula.Parse(species);
-                foreach (var kv in perUnit)
-                {
-                    var def = ItemForElement(kv.Key); // tu helper actual
-                    AddReserve(def, -kv.Value * canDown);
-                }
+            coefs[index]++;
+        }
 
-                cofs[index] -= canDown;
-                Render();
+        void TryDecrease(string formula, int[] coefs, int index)
+        {
+            if (coefs[index] <= 1)
                 return;
-            }
+
+            var perUnit = ChemFormula.Parse(formula);
+
+            foreach (var kv in perUnit)
+                AddReserve(ItemForElement(kv.Key), -kv.Value);
+
+            coefs[index]--;
         }
 
-
-        public bool IsBalancedNow()
+        // -------------------------
+        // Validación
+        // -------------------------
+        public bool IsBalanced()
         {
-            if (Station == null || Station.reaction == null) return false;
+            if (Station == null || Station.reaction == null)
+                return false;
 
-            // todos >= 1
-            for (int i = 0; i < coefL.Length; i++) if (coefL[i] < 1) return false;
-            for (int i = 0; i < coefR.Length; i++) if (coefR[i] < 1) return false;
-
-            var rxn = Station.reaction;
-            return ReactionValidator.IsBalanced(rxn.lhs, rxn.rhs, coefL, coefR);
+            return ReactionValidator.IsBalanced(
+                Station.reaction.lhs,
+                Station.reaction.rhs,
+                coefL,
+                coefR
+            );
         }
 
-
-        public void Render(int selectedSide = -1, int selectedIndex = -1)
+        public void RegisterError()
         {
-            if (Station == null || Station.reaction == null || equationHUD == null) return;
-
-            var rxn = Station.reaction;
-            var diff = ReactionValidator.Imbalance(rxn.lhs, rxn.rhs, coefL, coefR);
-            var bad = new HashSet<string>();
-            foreach (var kv in diff) if (kv.Value != 0) bad.Add(kv.Key);
-
-            equationHUD.SetEquation(rxn.lhs, rxn.rhs, coefL, coefR, selectedSide, selectedIndex, bad);
+            errorCount++;
         }
 
-        public int LeftCount { get { return Station != null && Station.reaction?.lhs != null ? Station.reaction.lhs.Length : 0; } }
-        public int RightCount { get { return Station != null && Station.reaction?.rhs != null ? Station.reaction.rhs.Length : 0; } }
-
-        // Llamar cuando Verify es correcto
-        public void CompleteChallenge()
+        // -------------------------
+        // Finalización
+        // -------------------------
+        public void CompleteSession()
         {
-            if (Station == null || Station.reaction == null) return;
+            if (!running)
+                return;
 
             running = false;
 
-            int score = baseScore
-                        - errorCount * penaltyPerError
-                        - Mathf.RoundToInt(elapsed) * penaltyPerSecond;
-            score = Mathf.Max(minScore, score);
+            int score = Mathf.Max(
+                minScore,
+                baseScore - errorCount * penaltyPerError
+            );
 
-            // Confirmar: quitar la reserva del inventario real
-            if (inventory != null)
-            {
-                foreach (var kv in reserved)
-                {
-                    var def = kv.Key;
-                    int qty = kv.Value;
-                    if (def != null && qty > 0)
-                        inventory.Remove(def, qty);
-                }
-            }
-            reserved.Clear();
+            CommitInventory();
 
             var result = new BalanceResult
             {
@@ -208,59 +201,46 @@ namespace CB.Balance
                 score = score
             };
 
-            // Guardar puntaje en UserDB (si hay usuario actual)
-            if (UserDB.Instance != null)
-            {
-                if (UserDB.Instance.HasCurrentUser())
-                {
-                    UserDB.Instance.AddScore(score); // guarda r.score
-                }
-                else
-                {
-                    Debug.LogWarning("No hay usuario actual (SetCurrentUser) — no se guardó el puntaje.");
-                }
-            }
-            // Mostrar panel directamente
-            if (resultPanel != null)
-            {
-                resultPanel.Show(result);
-            }
-
-
-            OnChallengeCompleted?.Invoke(result);
+            OnSessionCompleted?.Invoke(result);
         }
 
-
-        // Reintentar: resetea tiempo/errores y vuelve a coeficientes iniciales
-        public void RestartChallenge()
+        public void Restart()
         {
-            reserved.Clear(); // descarta la reserva
-            InitFromStation();
-            errorCount = 0;
-            elapsed = 0f;
+            InitFromReaction();
+            ResetMetrics();
             running = true;
-            Render();
+            OnEquationChanged?.Invoke();
         }
 
-        ItemDefinition ItemForElement(string elementSymbol)
+        // -------------------------
+        // Inventario
+        // -------------------------
+        void CommitInventory()
         {
-            if (database == null || string.IsNullOrEmpty(elementSymbol)) return null;
-            // SUPOSICIÓN: el id del ItemDefinition en la DB es el símbolo, p.e. "H", "O".
-            // Si usas otro id, crea aquí un map símbolo->id y llama database.FindById(map[símbolo]).
-            return database.FindById(elementSymbol);
+            foreach (var kv in reserved)
+                inventory.Remove(kv.Key, kv.Value);
+
+            reserved.Clear();
+        }
+
+        ItemDefinition ItemForElement(string symbol)
+        {
+            return database != null ? database.FindById(symbol) : null;
         }
 
         int ReservedOf(ItemDefinition def)
         {
-            if (def == null) return 0;
-            int v; return reserved.TryGetValue(def, out v) ? v : 0;
+            return reserved.TryGetValue(def, out int v) ? v : 0;
         }
 
         void AddReserve(ItemDefinition def, int qty)
         {
-            if (def == null || qty == 0) return;
-            int v; reserved.TryGetValue(def, out v);
+            if (def == null || qty == 0)
+                return;
+
+            reserved.TryGetValue(def, out int v);
             v += qty;
+
             if (v <= 0) reserved.Remove(def);
             else reserved[def] = v;
         }

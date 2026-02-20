@@ -4,23 +4,21 @@ namespace CB.Balance
 {
     public class BalanceStation : MonoBehaviour
     {
-        public ReactionAsset reaction;          // asigna aquí la ecuación de esta estación
-        public Transform cameraFocus;           // opcional, para Cinemachine
+        [Header("Data")]
+        public ReactionAsset reaction;
 
-        public string ReactionId => reaction ? reaction.reactionId : "";
-        public string[] LHS => reaction ? reaction.lhs : null;
-        public string[] RHS => reaction ? reaction.rhs : null;
-        public int[] CoefL => reaction ? reaction.coefL : null;
-        public int[] CoefR => reaction ? reaction.coefR : null;
+        [Header("Refs")]
+        public BalanceSessionController session;
+        public BalanceSelectionController selection;
+        public BalanceVisualController visual;
+        public Transform cameraFocus;
 
-        public BalanceSessionController sessionUI;        // arrastra el del PanelEcuacionBalance
-        public BalanceVisualController balanceVisual;     // arrastra el de la balanza
+        public string ReactionId => reaction != null ? reaction.reactionId : null;
 
         void OnValidate()
         {
-            // si ambas existen, vincula
-            if (balanceVisual != null && sessionUI != null)
-                balanceVisual.BindSession(sessionUI);
+            if (visual != null && session != null)
+                visual.BindSession(session);
         }
     }
 }

@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 75bada0217c81064380124d8881cfe52, type: 3}
-  m_Name: IT_Cloro
+  m_Name: IT_Oxigeno
   m_EditorClassIdentifier: 
-  id: Cl
-  displayName: Cloro
-  collectiblePrefab: {fileID: -6079101377704237311, guid: 4790bb7948bf805498b40e418e90f7c1, type: 3}
-  icon: {fileID: -1527686826, guid: 4f81152b5ec0a384290a95ec73117e99, type: 3}
+  id: O
+  displayName: Oxigeno
+  collectiblePrefab: {fileID: -6079101377704237311, guid: 31b988bc7dfc0624192cdd6a3f496658, type: 3}
+  icon: {fileID: -1687178972, guid: b2feada5d9a3fbb42b4f65ecce5b6c81, type: 3}
   maxStack: 99

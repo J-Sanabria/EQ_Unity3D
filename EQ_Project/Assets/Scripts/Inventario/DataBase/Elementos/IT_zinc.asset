@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: Zn
   displayName: Zinc
+  collectiblePrefab: {fileID: -6079101377704237311, guid: cbed24a832a30134ebaf85da5f651d42, type: 3}
   icon: {fileID: 1566933321, guid: 9b282b84ed88c6445970a4f4f875fc2f, type: 3}
   maxStack: 99

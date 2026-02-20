@@ -1,195 +1,119 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using CB.Core;
 using CB.Balance;
-
 
 public class BalanceInputController : MonoBehaviour
 {
+
     [Header("Refs")]
-    [SerializeField] GameModeController gameMode;
+    [SerializeField] BalanceSelectionController selection;
     [SerializeField] BalanceSessionController session;
 
-    [Header("Actions (del mapa 'Balance')")]
-    public InputActionReference moveLeft;
-    public InputActionReference moveRight;
-    public InputActionReference increase;
-    public InputActionReference decrease;
-    public InputActionReference verify;
-    public InputActionReference exitAction;
+    [Header("Actions (mapa Balance)")]
+    [SerializeField] InputActionReference moveLeft;
+    [SerializeField] InputActionReference moveRight;
+    [SerializeField] InputActionReference increase;
+    [SerializeField] InputActionReference decrease;
+    [SerializeField] InputActionReference verify;
+    [SerializeField] InputActionReference exit;
 
     [Header("Audio (opcional)")]
     [SerializeField] AudioSource audioSource;
-    [SerializeField] AudioClip sfxInc, sfxDec, sfxMove, sfxOk, sfxError;
+    [SerializeField] AudioClip sfxInc, sfxDec, sfxMove;
 
-    int selSide = 0;   // 0 = izquierda, 1 = derecha
-    int selIndex = 0;
+    // Eventos (orquestación externa)
+    public event System.Action VerifyPressed;
+    public event System.Action ExitPressed;
+
 
     void Reset()
     {
-        if (gameMode == null) gameMode = FindObjectOfType<GameModeController>();
-        if (session == null) session = GetComponent<BalanceSessionController>();
-        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        if (session == null)
+            session = GetComponent<BalanceSessionController>();
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
     }
 
     void OnEnable()
     {
-        EnableAction(moveLeft, OnMoveLeft);
-        EnableAction(moveRight, OnMoveRight);
-        EnableAction(increase, OnIncrease);
-        EnableAction(decrease, OnDecrease);
-        EnableAction(verify, OnVerify);
-        EnableAction(exitAction, OnExit);
-
-        SnapSelection();
-        Render();
+        Bind(moveLeft, OnMoveLeft);
+        Bind(moveRight, OnMoveRight);
+        Bind(increase, OnIncrease);
+        Bind(decrease, OnDecrease);
+        Bind(verify, OnVerify);
+        Bind(exit, OnExit);
     }
 
     void OnDisable()
     {
-        DisableAction(moveLeft, OnMoveLeft);
-        DisableAction(moveRight, OnMoveRight);
-        DisableAction(increase, OnIncrease);
-        DisableAction(decrease, OnDecrease);
-        DisableAction(verify, OnVerify);
-        DisableAction(exitAction, OnExit);
+        Unbind(moveLeft, OnMoveLeft);
+        Unbind(moveRight, OnMoveRight);
+        Unbind(increase, OnIncrease);
+        Unbind(decrease, OnDecrease);
+        Unbind(verify, OnVerify);
+        Unbind(exit, OnExit);
     }
 
-    void EnableAction(InputActionReference aref, System.Action<InputAction.CallbackContext> cb)
+    #region Input binding
+
+    void Bind(InputActionReference a, System.Action<InputAction.CallbackContext> cb)
     {
-        if (aref == null || aref.action == null) return;
-        aref.action.performed += cb;
-        aref.action.Enable();
-    }
-    void DisableAction(InputActionReference aref, System.Action<InputAction.CallbackContext> cb)
-    {
-        if (aref == null || aref.action == null) return;
-        aref.action.performed -= cb;
-        aref.action.Disable();
+        if (a?.action == null) return;
+        a.action.performed += cb;
     }
 
-    // Callbacks
-    void OnMoveLeft(InputAction.CallbackContext ctx)
+    void Unbind(InputActionReference a, System.Action<InputAction.CallbackContext> cb)
     {
-        if (!InBalance()) return;
-        MoveLeft();
+        if (a?.action == null) return;
+        a.action.performed -= cb;
     }
-    void OnMoveRight(InputAction.CallbackContext ctx)
+
+    #endregion
+
+    #region Callbacks
+
+    void OnMoveLeft(InputAction.CallbackContext _)
     {
-        if (!InBalance()) return;
-        MoveRight();
+        selection.MoveLeft();
+        Play(sfxMove);
     }
-    void OnIncrease(InputAction.CallbackContext ctx)
+
+    void OnMoveRight(InputAction.CallbackContext _)
     {
-        if (!InBalance()) return;
-        session.Adjust(selSide, selIndex, +1);
+        selection.MoveRight();
+        Play(sfxMove);
+    }
+    void OnIncrease(InputAction.CallbackContext _)
+    {
+        session.Adjust(selection.SelectedSide, selection.SelectedIndex, +1);
         Play(sfxInc);
-        Render();
     }
-    void OnDecrease(InputAction.CallbackContext ctx)
+
+    void OnDecrease(InputAction.CallbackContext _)
     {
-        if (!InBalance()) return;
-        session.Adjust(selSide, selIndex, -1);
+        session.Adjust(selection.SelectedSide, selection.SelectedIndex, -1);
         Play(sfxDec);
-        Render();
     }
-    void OnVerify(InputAction.CallbackContext ctx)
+
+
+    void OnVerify(InputAction.CallbackContext _)
     {
-        if (!InBalance()) return;
-
-        bool ok = session.IsBalancedNow();
-
-        // feedback visual de la balanza
-        BalanceVisualController visual = null;
-        if (gameMode != null && gameMode.ActiveStation != null)
-            visual = gameMode.ActiveStation.balanceVisual;
-
-        if (ok)
-        {
-            Play(sfxOk);
-            if (visual != null) visual.OnVerify(true);
-
-            // NUEVO: cerrar desafío y disparar panel de resultado
-            session.CompleteChallenge();
-   
-        }
-        
-        else
-        {
-            session.errorCount++;
-            Play(sfxError);
-            if (visual != null) visual.OnVerify(false);
-        }
+        Debug.Log("[Balance] Verify PRESSED");
+        VerifyPressed?.Invoke();
     }
 
-    void OnExit(InputAction.CallbackContext ctx)
+
+    void OnExit(InputAction.CallbackContext _)
     {
-        if (!InBalance()) return;
-        gameMode.ExitBalance();
+        Debug.Log("[Balance] Exit PRESSED");
+        ExitPressed?.Invoke();
     }
 
-    bool InBalance()
-
-    {
-        Debug.Log("In Balance check");
-        return gameMode != null && gameMode.State == GameState.Balance && session != null;
-
-    }
-
-    // Navegación
-    void MoveLeft()
-    {
-        int lCount = session.LeftCount;
-        int rCount = session.RightCount;
-
-        if (selSide == 1 && rCount > 0)
-        {
-            if (selIndex > 0) selIndex--;
-            else { selSide = 0; selIndex = Mathf.Max(0, lCount - 1); }
-        }
-        else if (selSide == 0 && lCount > 0)
-        {
-            selIndex = Mathf.Max(0, selIndex - 1);
-        }
-        Play(sfxMove);
-        Render();
-    }
-
-    void MoveRight()
-    {
-        int lCount = session.LeftCount;
-        int rCount = session.RightCount;
-
-        if (selSide == 0 && lCount > 0)
-        {
-            if (selIndex < lCount - 1) selIndex++;
-            else { selSide = 1; selIndex = 0; }
-        }
-        else if (selSide == 1 && rCount > 0)
-        {
-            selIndex = Mathf.Min(rCount - 1, selIndex + 1);
-        }
-        Play(sfxMove);
-        Render();
-    }
-
-    void SnapSelection()
-    {
-        int lCount = session.LeftCount;
-        int rCount = session.RightCount;
-
-        if (lCount > 0) { selSide = 0; selIndex = Mathf.Clamp(selIndex, 0, lCount - 1); }
-        else { selSide = 1; selIndex = Mathf.Clamp(selIndex, 0, Mathf.Max(0, rCount - 1)); }
-    }
-
-    void Render()
-    {
-        session.Render(selSide, selIndex);
-    }
+    #endregion
 
     void Play(AudioClip clip)
     {
-        if (audioSource != null && clip != null)
+        if (audioSource && clip)
             audioSource.PlayOneShot(clip);
     }
 }

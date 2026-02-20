@@ -1,199 +1,182 @@
-using UnityEngine;
 using CB.Balance;
+using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Security.Cryptography;
 
 namespace CB.Core
 {
-    public enum GameState { Exploration, Balance, Pause }
+    public enum GameState
+    {
+        Exploration,
+        Balance
+    }
 
     public class GameModeController : MonoBehaviour
     {
         [Header("Player refs")]
-        [SerializeField] MonoBehaviour playerMovement;      // ej. ThirdPersonController
-        [SerializeField] MonoBehaviour interactionSensor;   // tu InteractionSensor
-        [SerializeField] MonoBehaviour playerInputs;        // StarterAssetsInputs (para bloquear input si hace falta)
+        [SerializeField] MonoBehaviour playerMovement;
+        [SerializeField] MonoBehaviour interactionSensor;
+        [SerializeField] MonoBehaviour playerInputs;
 
-        [Header("Cameras (activa solo una)")]
-        [SerializeField] GameObject gameplayCameraRig;      // vcam principal o rig gameplay
-        [SerializeField] GameObject balanceCameraRig;       // vcam enfocada al monitor
+        [Header("Cameras")]
+        [SerializeField] GameObject gameplayCameraRig;
+        [SerializeField] GameObject balanceCameraRig;
 
         [Header("UI Panels")]
-        [SerializeField] GameObject hudTopEquation;         // siempre visible (modo compacto si quieres)
-        [SerializeField] GameObject hudExploration;         // prompts, hotbar, etc.
-        [SerializeField] GameObject hudBalance;             // panel grande de balanceo
-        [SerializeField] GameObject hudPause;               // panel de pausa
+        [SerializeField] GameObject hudTopEquation;
+        [SerializeField] GameObject hudExploration;
+        [SerializeField] GameObject hudBalance;
+        [SerializeField] EquationHUDBinding equationHUD;
 
         [Header("Cursor")]
         [SerializeField] bool showCursorInBalance = true;
-        [SerializeField] bool showCursorInPause = true;
 
+        [Header("Input")]
         [SerializeField] PlayerInput playerInput;
         [SerializeField] string explorationMap = "Gameplay";
         [SerializeField] string balanceMap = "Balance";
-        [SerializeField] string pauseMap = "UI";
-
-
-        [Header("Actions (Input System)")]
-        [SerializeField] InputActionReference pauseActionExploration; // del mapa Exploration/Player
-        [SerializeField] InputActionReference resumeActionUI;
 
         public GameState State { get; private set; } = GameState.Exploration;
-
-        // Estacion de balance activa (por si tienes varias)
-        public BalanceStation ActiveStation { get; private set; }
-
-        bool _transitionLock;
-
+        public BalanceStation CurrentStation { get; private set; }
         void Awake()
         {
             ApplyState();
         }
 
-        void OnEnable()
+        public void EnterExploration()
         {
-            Subscribe(pauseActionExploration, OnPausePerformed);
-            Subscribe(resumeActionUI, OnResumePerformed);
-        }
-        void OnDisable()
-        {
-            Unsubscribe(pauseActionExploration, OnPausePerformed);
-            Unsubscribe(resumeActionUI, OnResumePerformed);
+            if (State == GameState.Exploration) return;
+
+            CurrentStation = null;
+            State = GameState.Exploration;
+            ApplyState();
         }
 
-        void Subscribe(InputActionReference a, System.Action<InputAction.CallbackContext> cb)
-        {
-            if (a != null && a.action != null) a.action.performed += cb;
-        }
-        void Unsubscribe(InputActionReference a, System.Action<InputAction.CallbackContext> cb)
-        {
-            if (a != null && a.action != null) a.action.performed -= cb;
-        }
-
-        void OnPausePerformed(InputAction.CallbackContext _)
-        {
-            if (State == GameState.Exploration) EnterPause();
-            else if (State == GameState.Balance) { /* no pausar desde aquí */ }
-        }
-        void OnResumePerformed(InputAction.CallbackContext _)
-        {
-            if (State == GameState.Pause) ExitPause();
-        }
         public void EnterBalance(BalanceStation station)
         {
-            if (_transitionLock || station == null) return;
-            _transitionLock = true;
+            Debug.Log("LevelControllerDioLaOrden");
+            if (station == null || State == GameState.Balance)
+            {
+                Debug.LogWarning("No hay station o ya esta en balanceo");
+                return;
+            }
+          
 
-            ActiveStation = station;
+            CurrentStation = station;
             State = GameState.Balance;
-            ApplyState();
 
-            _transitionLock = false;
+            station.session.BindStation(station);
+
+            station.selection.Configure(
+                station.reaction.lhs.Length,
+                station.reaction.rhs.Length
+            );
+
+            equationHUD.Bind(
+                station.session,
+                station.selection
+            );
+
+            var input = station.GetComponent<BalanceInputController>();
+            if (input != null)
+            {
+                input.VerifyPressed += OnVerifyRequested;
+                input.ExitPressed += OnExitRequested;
+            }
+
+            ApplyState();
+            
         }
 
         public void ExitBalance()
         {
-            if (_transitionLock) return;
-            _transitionLock = true;
+            if (State != GameState.Balance)
+                return;
 
-            State = GameState.Exploration;
-            ActiveStation = null;
-            ApplyState();
+            if (CurrentStation != null)
+            {
+                var input = CurrentStation.GetComponent<BalanceInputController>();
+                if (input != null)
+                {
+                    input.VerifyPressed -= OnVerifyRequested;
+                    input.ExitPressed -= OnExitRequested;
+                }
+            }
 
-            _transitionLock = false;
-        }
-
-        public void EnterPause()
-        {
-            if (_transitionLock) return;
-            _transitionLock = true;
-
-            State = GameState.Pause;
-            ApplyState();
-
-            _transitionLock = false;
-        }
-
-        public void ExitPause()
-        {
-            if (_transitionLock) return;
-            _transitionLock = true;
-
-            State = (ActiveStation != null) ? GameState.Balance : GameState.Exploration;
-            ApplyState();
-
-            _transitionLock = false;
+            EnterExploration();
         }
 
         void ApplyState()
         {
-            // Player movement y sensor
+            // Player
             SetEnabled(playerMovement, State == GameState.Exploration);
             SetEnabled(interactionSensor, State == GameState.Exploration);
-
-            // Si necesitas “anular” por completo entradas mientras no exploras:
             SetEnabled(playerInputs, State == GameState.Exploration);
 
-            // Cámaras
-            if (gameplayCameraRig) gameplayCameraRig.SetActive(State != GameState.Balance);
-            if (balanceCameraRig) balanceCameraRig.SetActive(State == GameState.Balance);
+            // Cameras
+            if (gameplayCameraRig)
+                gameplayCameraRig.SetActive(State == GameState.Exploration);
+
+            if (balanceCameraRig)
+                balanceCameraRig.SetActive(State == GameState.Balance);
 
             // UI
-            if (hudTopEquation) hudTopEquation.SetActive(true); // siempre visible; adentro puedes cambiar modo
-            if (hudExploration) hudExploration.SetActive(State == GameState.Exploration);
-            if (hudBalance) hudBalance.SetActive(State == GameState.Balance);
-            if (hudPause) hudPause.SetActive(State == GameState.Pause);
+            if (hudTopEquation)
+                hudTopEquation.SetActive(true);
+
+            if (hudExploration)
+                hudExploration.SetActive(State == GameState.Exploration);
+
+            if (hudBalance)
+                hudBalance.SetActive(State == GameState.Balance);
 
             // Cursor
-            switch (State)
-            {
-                case GameState.Exploration:
-                    SetCursor(false);
-                    break;
-                case GameState.Balance:
-                    SetCursor(showCursorInBalance);
-                    break;
-                case GameState.Pause:
-                    SetCursor(showCursorInPause);
-                    break;
-            }
+            SetCursor(State == GameState.Balance && showCursorInBalance);
 
+            // Input maps
             if (playerInput != null)
             {
-                switch (State)
-                {
-                    case GameState.Exploration:
-                        if (!string.IsNullOrEmpty(explorationMap))
-                            playerInput.SwitchCurrentActionMap(explorationMap);
-                        break;
-                    case GameState.Balance:
-                        if (!string.IsNullOrEmpty(balanceMap))
-                            playerInput.SwitchCurrentActionMap(balanceMap);
-                        break;
-                    case GameState.Pause:
-                        if (!string.IsNullOrEmpty(pauseMap))
-                            playerInput.SwitchCurrentActionMap(pauseMap);
-                        break;
-                }
-            }
+                if (State == GameState.Exploration && !string.IsNullOrEmpty(explorationMap))
+                    playerInput.SwitchCurrentActionMap(explorationMap);
 
-            // Aviso a la UI de balance (si existe) de la estación activa
-            if (State == GameState.Balance && hudBalance != null)
-            {
-                var ui = hudBalance.GetComponentInChildren<IBalanceUIScreen>();
-                if (ui != null) ui.BindStation(ActiveStation);
+                if (State == GameState.Balance && !string.IsNullOrEmpty(balanceMap))
+                    playerInput.SwitchCurrentActionMap(balanceMap);
             }
         }
 
-        static void SetEnabled(MonoBehaviour mb, bool on)
+        static void SetEnabled(MonoBehaviour mb, bool enabled)
         {
-            if (mb != null) mb.enabled = on;
+            if (mb != null) mb.enabled = enabled;
         }
 
         static void SetCursor(bool visible)
         {
             Cursor.visible = visible;
-            Cursor.lockState = visible ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.lockState = visible
+                ? CursorLockMode.None
+                : CursorLockMode.Locked;
+        }
+
+        void OnVerifyRequested()
+        {
+            if (CurrentStation == null) return;
+
+            var session = CurrentStation.session;
+
+            if (session.IsBalanced())
+            {
+                session.CompleteSession();
+            }
+            else
+            {
+                session.RegisterError();
+                Debug.Log("[Balance] Ecuación incorrecta");
+            }
+        }
+
+        void OnExitRequested()
+        {
+            Debug.Log("[Balance] Salida manual del modo balance");
+            ExitBalance();
         }
     }
 }

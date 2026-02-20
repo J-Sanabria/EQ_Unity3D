@@ -7,6 +7,9 @@ public class ItemDefinition : ScriptableObject
     public string id;           // ej: "element_H"
     public string displayName;  // ej: "Hidrogeno"
 
+    [Header("Spawn")]
+    public Collectible collectiblePrefab;
+
     [Header("Visual")]
     public Sprite icon;
 

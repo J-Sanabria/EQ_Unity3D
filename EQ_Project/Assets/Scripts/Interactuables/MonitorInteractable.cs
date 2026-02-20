@@ -1,24 +1,22 @@
+using CB.Balance;
 using UnityEngine;
-using CB.Core;
 
-namespace CB.Balance
+public class MonitorInteractable : Interactable
 {
-    [RequireComponent(typeof(Collider))]
-    public class MonitorInteractable : Interactable
+    [SerializeField] LevelController level;
+    [SerializeField] BalanceStation station;
+
+    public override void Interact(Transform interactor)
     {
-        [Header("Refs")]
-        public GameModeController gameMode;
-        public BalanceStation station;
-
-        public override void Interact(Transform interactor)
+        if (level == null || station == null)
         {
-            if (gameMode == null || station == null) return;
-            if (gameMode.State == GameState.Balance) return;
-
-            gameMode.EnterBalance(station);
+            Debug.LogWarning("MonitorInteractable mal configurado");
+            return;
         }
 
-        // Prompt opcional distinto
-        public new string Prompt => "E - Iniciar balanceo";
+        Debug.Log("ElMonitorDiolaOrden");
+        level.RequestStartBalance(station);
     }
+
+    public new string Prompt => "E - Iniciar balanceo";
 }
