@@ -14,4 +14,15 @@ public class ReactionAsset : ScriptableObject
     [Header("Coeficientes iniciales (muestran en HUD)")]
     public int[] coefL = { 2, 1 };
     public int[] coefR = { 2 };
+
+    void OnValidate()
+    {
+        if (lhs != null && coefL != null && coefL.Length != lhs.Length)
+            Debug.LogWarning($"[{name}] coefL.Length != lhs.Length");
+
+        if (rhs != null && coefR != null && coefR.Length != rhs.Length)
+            Debug.LogWarning($"[{name}] coefR.Length != rhs.Length");
+    }
+
 }
+

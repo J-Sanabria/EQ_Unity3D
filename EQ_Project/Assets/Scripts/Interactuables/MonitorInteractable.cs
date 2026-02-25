@@ -1,22 +1,32 @@
 using CB.Balance;
 using UnityEngine;
 
-public class MonitorInteractable : Interactable
+public class MonitorInteractable : MonoBehaviour, IInteractable
 {
-    [SerializeField] LevelController level;
-    [SerializeField] BalanceStation station;
+    [SerializeField] private LevelController level;
+    [SerializeField] private BalanceStation station;
 
-    public override void Interact(Transform interactor)
+    public string Prompt => "Interactuar - Iniciar balanceo";
+
+    void Reset()
     {
+        if (station == null) station = GetComponentInParent<BalanceStation>();
+        if (level == null) level = Object.FindFirstObjectByType<LevelController>();
+    }
+
+    public void Interact(Transform interactor)
+    {
+        if (level == null) level = Object.FindFirstObjectByType<LevelController>();
+        if (station == null) station = GetComponentInParent<BalanceStation>();
+
         if (level == null || station == null)
         {
-            Debug.LogWarning("MonitorInteractable mal configurado");
+            Debug.LogWarning("[MonitorInteractable] Falta LevelController o BalanceStation");
             return;
         }
 
-        Debug.Log("ElMonitorDiolaOrden");
         level.RequestStartBalance(station);
     }
 
-    public new string Prompt => "E - Iniciar balanceo";
+    public void SetFocused(bool focused) { }
 }

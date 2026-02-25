@@ -48,7 +48,7 @@
                     "id": "5e796a0a-71e6-4598-9be5-d7bcb5cfab30",
                     "expectedControlType": "",
                     "processors": "",
-                    "interactions": "",
+                    "interactions": "Press",
                     "initialStateCheck": false
                 },
                 {
@@ -242,18 +242,7 @@
                     "name": "",
                     "id": "bbb5a61c-4971-4c71-8a9a-b14207845e4b",
                     "path": "<Keyboard>/e",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Interact",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "1e805132-e8e4-4843-87d8-64d15710eeab",
-                    "path": "",
-                    "interactions": "",
+                    "interactions": "Press",
                     "processors": "",
                     "groups": "",
                     "action": "Interact",
@@ -424,7 +413,18 @@
                 {
                     "name": "",
                     "id": "0a3b3ac3-7b73-4945-9c50-d14cf10a599f",
-                    "path": "<Keyboard>/space",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Verify",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ebdb8ab6-2a8a-48c2-978d-a3250eb28708",
+                    "path": "<Keyboard>/enter",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -436,17 +436,6 @@
                     "name": "",
                     "id": "01a54fb9-7085-4a60-87c4-a625f2b65a8f",
                     "path": "<Keyboard>/escape",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Exit",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "bd0a759b-e6a8-4a1d-b0e8-ca8a0b8c7b77",
-                    "path": "<Keyboard>/e",
                     "interactions": "",
                     "processors": "",
                     "groups": "",

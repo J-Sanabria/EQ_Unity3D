@@ -10,41 +10,33 @@ public class EquationHUDBinding : MonoBehaviour
 
     BalanceSessionController session;
     BalanceSelectionController selection;
-
     ReactionAsset reaction;
+    [SerializeField] bool showImbalanceInExploration = false; // por defecto NO
+    [SerializeField] bool showImbalanceInBalance = true;
 
-    void OnEnable()
-    {
-        if (selection != null)
-            selection.OnSelectionChanged += OnSelectionChanged;
-
-        if (session != null)
-            session.OnEquationChanged += Refresh;
-    }
+    public void SetMode(bool isBalanceMode)
+{
+    _isBalanceMode = isBalanceMode;
+    Refresh();
+}
+bool _isBalanceMode;
 
     void OnDisable()
     {
-        if (selection != null)
-            selection.OnSelectionChanged -= OnSelectionChanged;
-
-        if (session != null)
-            session.OnEquationChanged -= Refresh;
+        Unsubscribe();
     }
 
-    public void Bind(
-        BalanceSessionController s,
-        BalanceSelectionController sel)
+    public void Bind(BalanceSessionController s, BalanceSelectionController sel)
     {
+        // Desuscribir de lo anterior
+        Unsubscribe();
+
         session = s;
         selection = sel;
 
-        if (selection != null)
-            selection.OnSelectionChanged += OnSelectionChanged;
+        Subscribe();
 
-        if (session != null)
-            session.OnEquationChanged += Refresh;
-
-        reaction = session?.Station?.reaction;
+        reaction = session?.Station?.reaction ?? reaction;
         Refresh();
     }
 
@@ -54,10 +46,25 @@ public class EquationHUDBinding : MonoBehaviour
         Refresh();
     }
 
-    void OnSelectionChanged(int _, int __)
+    void Subscribe()
     {
-        Refresh();
+        if (selection != null)
+            selection.OnSelectionChanged += OnSelectionChanged;
+
+        if (session != null)
+            session.OnEquationChanged += Refresh;
     }
+
+    void Unsubscribe()
+    {
+        if (selection != null)
+            selection.OnSelectionChanged -= OnSelectionChanged;
+
+        if (session != null)
+            session.OnEquationChanged -= Refresh;
+    }
+
+    void OnSelectionChanged(int _, int __) => Refresh();
 
     void Refresh()
     {
@@ -69,15 +76,9 @@ public class EquationHUDBinding : MonoBehaviour
 
         HashSet<string> badElements = null;
 
-        if (session != null)
+        if (session != null && _isBalanceMode)
         {
-            var bad = ReactionValidator.Imbalance(
-                reaction.lhs,
-                reaction.rhs,
-                coefL,
-                coefR
-            );
-
+            var bad = ReactionValidator.Imbalance(reaction.lhs, reaction.rhs, coefL, coefR);
             badElements = new HashSet<string>();
             foreach (var kv in bad)
                 if (kv.Value != 0)
@@ -102,5 +103,4 @@ public class EquationHUDBinding : MonoBehaviour
             );
         }
     }
-
 }

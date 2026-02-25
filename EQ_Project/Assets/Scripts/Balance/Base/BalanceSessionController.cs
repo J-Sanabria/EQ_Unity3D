@@ -1,6 +1,5 @@
 using UnityEngine;
 using System;
-using System.Collections.Generic;
 
 namespace CB.Balance
 {
@@ -13,35 +12,37 @@ namespace CB.Balance
         public int score;
     }
 
-
     public class BalanceSessionController : MonoBehaviour
     {
-        [Header("Estado")]
+        [Header("Estado (coeficientes actuales)")]
         public int[] coefL;
         public int[] coefR;
 
         [Header("Progreso")]
         public int errorCount;
         public float elapsed;
-        bool running;
+        [SerializeField] private bool running;
+
+        [Header("Coeficientes")]
+        [SerializeField] private int minCoef = 1;
+        [SerializeField] private int maxCoef = 12;
 
         [Header("Score")]
-        [SerializeField] int baseScore = 1000;
-        [SerializeField] int penaltyPerError = 100;
-        [SerializeField] int minScore = 0;
-
-        [Header("Inventario")]
-        [SerializeField] PlayerInventory inventory;
-        [SerializeField] InventoryDatabase database;
-        [SerializeField] bool respectSubscripts = true;
-
-        Dictionary<ItemDefinition, int> reserved = new();
+        [SerializeField] private int baseScore = 1000;
+        [SerializeField] private int penaltyPerError = 100;
+        [SerializeField] private int minScore = 0;
 
         public BalanceStation Station { get; private set; }
 
+        /// <summary>
+        /// Hook opcional para restringir ajustes desde otro sistema (fases/llaves/dificultad).
+        /// Firma: (side, index, delta) => permitido?
+        /// side: 0=izq, 1=der
+        /// </summary>
+        public Func<int, int, int, bool> CanAdjust;
+
         public event Action<BalanceResult> OnSessionCompleted;
         public event Action OnEquationChanged;
-
 
         void Update()
         {
@@ -56,12 +57,6 @@ namespace CB.Balance
         {
             Station = station;
 
-            if (inventory == null)
-                inventory = FindObjectOfType<PlayerInventory>();
-
-            if (database == null && inventory != null)
-                database = inventory.database;
-
             InitFromReaction();
             ResetMetrics();
             running = true;
@@ -70,19 +65,29 @@ namespace CB.Balance
         void InitFromReaction()
         {
             if (Station == null || Station.reaction == null)
+            {
+                coefL = Array.Empty<int>();
+                coefR = Array.Empty<int>();
+                OnEquationChanged?.Invoke();
                 return;
+            }
 
             coefL = (int[])Station.reaction.coefL.Clone();
             coefR = (int[])Station.reaction.coefR.Clone();
 
-            for (int i = 0; i < coefL.Length; i++)
-                coefL[i] = Mathf.Max(1, coefL[i]);
-
-            for (int i = 0; i < coefR.Length; i++)
-                coefR[i] = Mathf.Max(1, coefR[i]);
-
-            reserved.Clear();
+            ClampAllCoefs();
             OnEquationChanged?.Invoke();
+        }
+
+        void ClampAllCoefs()
+        {
+            if (coefL != null)
+                for (int i = 0; i < coefL.Length; i++)
+                    coefL[i] = Mathf.Clamp(coefL[i], minCoef, maxCoef);
+
+            if (coefR != null)
+                for (int i = 0; i < coefR.Length; i++)
+                    coefR[i] = Mathf.Clamp(coefR[i], minCoef, maxCoef);
         }
 
         void ResetMetrics()
@@ -99,60 +104,26 @@ namespace CB.Balance
             if (!running || Station == null || Station.reaction == null)
                 return;
 
-            var species = side == 0
-                ? Station.reaction.lhs
-                : Station.reaction.rhs;
+            if (delta == 0) return;
+            if (side != 0 && side != 1) return;
 
+            // Hook de permisos (fases/llaves/dificultad)
+            if (CanAdjust != null && !CanAdjust(side, index, delta))
+            {
+                Debug.Log($"[Session] Adjust BLOQUEADO side={side} idx={index} delta={delta}");
+                return;
+            }
             var coefs = side == 0 ? coefL : coefR;
-
-            if (index < 0 || index >= species.Length)
+            if (coefs == null || index < 0 || index >= coefs.Length)
                 return;
 
             int before = coefs[index];
+            int after = Mathf.Clamp(before + delta, minCoef, maxCoef);
 
-            if (delta > 0)
-                TryIncrease(species[index], coefs, index);
-            else if (delta < 0)
-                TryDecrease(species[index], coefs, index);
+            if (after == before) return;
 
-            if (coefs[index] != before)
-                OnEquationChanged?.Invoke();
-        }
-
-        void TryIncrease(string formula, int[] coefs, int index)
-        {
-            var perUnit = ChemFormula.Parse(formula);
-
-            foreach (var kv in perUnit)
-            {
-                var def = ItemForElement(kv.Key);
-                int need = respectSubscripts ? kv.Value : 1;
-
-                if (def == null)
-                    return;
-
-                int available = inventory.CountOf(def) - ReservedOf(def);
-                if (available < need)
-                    return;
-            }
-
-            foreach (var kv in perUnit)
-                AddReserve(ItemForElement(kv.Key), kv.Value);
-
-            coefs[index]++;
-        }
-
-        void TryDecrease(string formula, int[] coefs, int index)
-        {
-            if (coefs[index] <= 1)
-                return;
-
-            var perUnit = ChemFormula.Parse(formula);
-
-            foreach (var kv in perUnit)
-                AddReserve(ItemForElement(kv.Key), -kv.Value);
-
-            coefs[index]--;
+            coefs[index] = after;
+            OnEquationChanged?.Invoke();
         }
 
         // -------------------------
@@ -186,16 +157,11 @@ namespace CB.Balance
 
             running = false;
 
-            int score = Mathf.Max(
-                minScore,
-                baseScore - errorCount * penaltyPerError
-            );
-
-            CommitInventory();
+            int score = Mathf.Max(minScore, baseScore - errorCount * penaltyPerError);
 
             var result = new BalanceResult
             {
-                reactionId = Station.reaction.reactionId,
+                reactionId = Station != null && Station.reaction != null ? Station.reaction.reactionId : "",
                 timeSeconds = elapsed,
                 errors = errorCount,
                 score = score
@@ -212,37 +178,9 @@ namespace CB.Balance
             OnEquationChanged?.Invoke();
         }
 
-        // -------------------------
-        // Inventario
-        // -------------------------
-        void CommitInventory()
+        public void Stop()
         {
-            foreach (var kv in reserved)
-                inventory.Remove(kv.Key, kv.Value);
-
-            reserved.Clear();
-        }
-
-        ItemDefinition ItemForElement(string symbol)
-        {
-            return database != null ? database.FindById(symbol) : null;
-        }
-
-        int ReservedOf(ItemDefinition def)
-        {
-            return reserved.TryGetValue(def, out int v) ? v : 0;
-        }
-
-        void AddReserve(ItemDefinition def, int qty)
-        {
-            if (def == null || qty == 0)
-                return;
-
-            reserved.TryGetValue(def, out int v);
-            v += qty;
-
-            if (v <= 0) reserved.Remove(def);
-            else reserved[def] = v;
+            running = false;
         }
     }
 }

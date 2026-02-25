@@ -15,6 +15,12 @@ namespace CB.Balance
 
         public string ReactionId => reaction != null ? reaction.reactionId : null;
 
+        void Awake()
+        {
+            if (visual != null && session != null)
+                visual.BindSession(session);
+        }
+
         void OnValidate()
         {
             if (visual != null && session != null)

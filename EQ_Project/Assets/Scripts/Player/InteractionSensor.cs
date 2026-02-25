@@ -2,34 +2,39 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using StarterAssets;
-using UnityEngine.UI;
 
 [RequireComponent(typeof(SphereCollider))]
 [RequireComponent(typeof(Rigidbody))]
 public class InteractionSensor : MonoBehaviour
 {
-    [Header("Deteccion")]
-    public LayerMask interactableMask;
-    [Range(0f, 1f)] public float angleBiasDot = 0.35f;
+    [Header("Detección")]
+    [SerializeField] private LayerMask interactableMask;
+    [Range(0f, 1f)]
+    [SerializeField] private float angleBiasDot = 0.35f;
 
     [Header("Referencias")]
-    public Transform cameraPivot;   // CinemachineCameraTarget del player
-    public TMP_Text promptText;     // Texto que va dentro del panel
+    [SerializeField] private Transform cameraPivot; // referencia de cámara (isométrica)
+    [SerializeField] private TMP_Text promptText;
 
     [Header("HUD Prompt")]
-    public GameObject panelPrompt;  // GameObject del panel en el Canvas
-    public CanvasGroup panelGroup;  // Opcional: si lo asignas, hará fade
-    public float fadeSpeed = 8f;    // Velocidad de fade (CanvasGroup)
+    [SerializeField] private GameObject panelPrompt;
+    [SerializeField] private CanvasGroup panelGroup;
+    [SerializeField] private float fadeSpeed = 8f;
 
-    private readonly List<IInteractable> _nearby = new List<IInteractable>();
+    private readonly List<IInteractable> _nearby = new();
     private IInteractable _current;
+
     private StarterAssetsInputs _inputs;
-    private float _targetAlpha = 0f;
+
+    // one-shot interact
+    private bool _prevInteract;
+    private float _targetAlpha;
 
     void Awake()
     {
         _inputs = GetComponentInParent<StarterAssetsInputs>();
-        if (_inputs == null) Debug.LogWarning("InteractionSensor: no encontro StarterAssetsInputs en el padre.");
+        if (_inputs == null)
+            Debug.LogWarning("InteractionSensor: no encontró StarterAssetsInputs en el padre.");
     }
 
     void OnValidate()
@@ -47,41 +52,69 @@ public class InteractionSensor : MonoBehaviour
 
     void OnEnable()
     {
-        // Panel activo pero transparente si hay CanvasGroup; si no hay, lo ocultamos
-        if (panelGroup != null)
-        {
-            if (panelPrompt && !panelPrompt.activeSelf) panelPrompt.SetActive(true);
-            panelGroup.alpha = 0f;
-            panelGroup.interactable = false;
-            panelGroup.blocksRaycasts = false;
-        }
-        else
-        {
-            if (panelPrompt) panelPrompt.SetActive(false);
-        }
-        // No apagues el promptText por separado; vive dentro del panel
+        _prevInteract = false;
+        SetCurrent(null);
+        SetPromptVisible(false, immediate: true);
+    }
+
+    void OnDisable()
+    {
+        SetCurrent(null);
+        _nearby.Clear();
+        SetPromptVisible(false, immediate: true);
     }
 
     void OnTriggerEnter(Collider other)
     {
         if (((1 << other.gameObject.layer) & interactableMask.value) == 0) return;
-        var ia = other.GetComponent<IInteractable>();
-        if (ia != null && !_nearby.Contains(ia)) _nearby.Add(ia);
+
+        if (other.TryGetComponent<IInteractable>(out var ia))
+        {
+            if (!_nearby.Contains(ia))
+                _nearby.Add(ia);
+        }
     }
 
     void OnTriggerExit(Collider other)
     {
-        var ia = other.GetComponent<IInteractable>();
-        if (ia != null)
-        {
-            if (_current == ia) SetCurrent(null);
-            _nearby.Remove(ia);
-        }
+        if (!other.TryGetComponent<IInteractable>(out var ia)) return;
+
+        if (_current == ia) SetCurrent(null);
+        _nearby.Remove(ia);
     }
 
     void Update()
     {
-        // Elegir mejor candidato
+        // Seleccionar mejor candidato
+        var best = FindBestCandidate();
+        if (best != _current) SetCurrent(best);
+
+        bool show = _current != null;
+        if (show && promptText != null)
+            promptText.text = _current.Prompt;
+
+        SetPromptVisible(show, immediate: false);
+
+        // Interact one-shot robusto
+        if (_inputs == null) return;
+
+        if (_inputs.interact)
+        {
+            // Consume el input para evitar que se quede "pegado"
+            _inputs.interact = false;
+            _prevInteract = false;
+
+            if (_current != null)
+                _current.Interact(transform.root);
+        }
+    }
+    public void ResetInteractLatch()
+    {
+        _prevInteract = false;
+        if (_inputs != null) _inputs.interact = false;
+    }
+    IInteractable FindBestCandidate()
+    {
         IInteractable best = null;
         float bestScore = float.NegativeInfinity;
 
@@ -95,49 +128,46 @@ public class InteractionSensor : MonoBehaviour
 
             var tr = (ia as Component).transform;
             Vector3 to = tr.position - eye;
+
             float dist = Mathf.Max(0.0001f, to.magnitude);
             float dot = Vector3.Dot(fwd, to.normalized);
+
             if (dot < angleBiasDot) continue;
 
-            float score = dot * 2f + 1f / dist;
-            if (score > bestScore) { bestScore = score; best = ia; }
+            // ponderación simple: mirar más + cerca mejor
+            float score = dot * 2f + (1f / dist);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = ia;
+            }
         }
 
-        if (best != _current) SetCurrent(best);
+        return best;
+    }
 
-        // Mostrar/ocultar panel y texto
-        bool show = _current != null;
-
-        if (show && promptText != null)
-            promptText.text = _current.Prompt;
-
+    void SetPromptVisible(bool visible, bool immediate)
+    {
         if (panelGroup != null)
         {
-            // Fade con CanvasGroup
-            _targetAlpha = show ? 1f : 0f;
-
             if (panelPrompt && !panelPrompt.activeSelf) panelPrompt.SetActive(true);
-            panelGroup.alpha = Mathf.MoveTowards(panelGroup.alpha, _targetAlpha, fadeSpeed * Time.deltaTime);
+
+            _targetAlpha = visible ? 1f : 0f;
+            float next = immediate
+                ? _targetAlpha
+                : Mathf.MoveTowards(panelGroup.alpha, _targetAlpha, fadeSpeed * Time.deltaTime);
+
+            panelGroup.alpha = next;
             panelGroup.interactable = false;
             panelGroup.blocksRaycasts = false;
 
-            // Si quieres ocultar por completo el GO cuando alpha llega a 0 (opcional):
-            if (panelGroup.alpha <= 0.001f && !show && panelPrompt && panelPrompt.activeSelf)
+            if (!visible && panelPrompt && panelGroup.alpha <= 0.001f)
                 panelPrompt.SetActive(false);
         }
         else
         {
-            // Sin CanvasGroup: activacion directa del panel
-            if (panelPrompt && panelPrompt.activeSelf != show)
-                panelPrompt.SetActive(show);
-        }
-
-        // Interact
-        bool pressed = _inputs != null ? _inputs.interact : Input.GetKeyDown(KeyCode.E);
-        if (_current != null && pressed)
-        {
-            if (_inputs != null) _inputs.interact = false;
-            _current.Interact(transform.root);
+            if (panelPrompt && panelPrompt.activeSelf != visible)
+                panelPrompt.SetActive(visible);
         }
     }
 

@@ -1,8 +1,8 @@
-using UnityEngine;
-using TMPro;
 using System.Text;
 using System.Collections.Generic;
 using CB.Balance;
+using TMPro;
+using UnityEngine;
 
 public class EquationHUD : MonoBehaviour
 {

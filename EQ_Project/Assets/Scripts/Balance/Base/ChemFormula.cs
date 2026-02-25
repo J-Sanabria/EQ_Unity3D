@@ -5,15 +5,15 @@ namespace CB.Balance
 {
     public static class ChemFormula
     {
-        // Parsea "H2SO4", "Ca(OH)2", "Fe2(SO4)3", "Al2(SO4)3"...
-        // Soporta paréntesis anidados.
         public static Dictionary<string, int> Parse(string formula)
         {
-            var i = 0;
-            return ParseGroup(formula, ref i, 1);
+            int i = 0;
+            var result = ParseGroup(formula, ref i);
+            return result;
         }
 
-        static Dictionary<string, int> ParseGroup(string s, ref int i, int mult)
+        // Parse until end or ')'
+        static Dictionary<string, int> ParseGroup(string s, ref int i)
         {
             var counts = new Dictionary<string, int>();
 
@@ -21,44 +21,50 @@ namespace CB.Balance
             {
                 char c = s[i];
 
-                if (c == ')') // fin de grupo
+                if (c == ')')
                 {
-                    i++;
-                    int k = ReadNumber(s, ref i);
-                    MultiplyInto(counts, mult * (k == 0 ? 1 : k));
-                    return counts;
+                    i++; // consume ')'
+                    break;
                 }
-                else if (c == '(') // subgrupo
+
+                if (c == '(')
                 {
-                    i++;
-                    var sub = ParseGroup(s, ref i, 1);
-                    Merge(counts, sub, 1);
-                }
-                else if (char.IsUpper(c)) // elemento
-                {
-                    string elem = ReadElement(s, ref i); // avanza i
+                    i++; // consume '('
+                    var sub = ParseGroup(s, ref i);   // parse inside
                     int k = ReadNumber(s, ref i);
-                    int add = (k == 0 ? 1 : k);
+                    if (k == 0) k = 1;
+                    Merge(counts, sub, k);
+                    continue;
+                }
+
+                if (char.IsUpper(c))
+                {
+                    string elem = ReadElement(s, ref i);
+                    int k = ReadNumber(s, ref i);
+                    if (k == 0) k = 1;
+
                     if (!counts.ContainsKey(elem)) counts[elem] = 0;
-                    counts[elem] += add;
+                    counts[elem] += k;
+                    continue;
                 }
-                else
-                {
-                    // caracter inesperado, avanza para evitar bucle
-                    i++;
-                }
+
+                // ignore unexpected
+                i++;
             }
 
-            MultiplyInto(counts, mult);
             return counts;
         }
 
         static string ReadElement(string s, ref int i)
         {
             var sb = new StringBuilder();
-            sb.Append(s[i]); // Upper ya validada
+            sb.Append(s[i]); // upper
             i++;
-            if (i < s.Length && char.IsLower(s[i])) { sb.Append(s[i]); i++; }
+            if (i < s.Length && char.IsLower(s[i]))
+            {
+                sb.Append(s[i]);
+                i++;
+            }
             return sb.ToString();
         }
 
@@ -72,14 +78,6 @@ namespace CB.Balance
                 i++;
             }
             return i == start ? 0 : value;
-        }
-
-        static void MultiplyInto(Dictionary<string, int> counts, int m)
-        {
-            if (m == 1) return;
-            var keys = new List<string>(counts.Keys);
-            for (int k = 0; k < keys.Count; k++)
-                counts[keys[k]] *= m;
         }
 
         static void Merge(Dictionary<string, int> into, Dictionary<string, int> from, int mult)
