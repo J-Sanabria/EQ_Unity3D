@@ -9,32 +9,40 @@ public class PhaseHUDController : MonoBehaviour, IPhaseHUD
     [SerializeField] Image hydrogenIcon;
     [SerializeField] Image oxygenIcon;
 
-    [Header("Lock overlays (optional)")]
+    [Header("Lock overlays")]
     [SerializeField] GameObject metalsLock;
     [SerializeField] GameObject nonMetalsLock;
     [SerializeField] GameObject hydrogenLock;
     [SerializeField] GameObject oxygenLock;
 
-    [Header("Active highlight (optional)")]
+    [Header("Active highlight")]
     [SerializeField] GameObject metalsActive;
     [SerializeField] GameObject nonMetalsActive;
     [SerializeField] GameObject hydrogenActive;
     [SerializeField] GameObject oxygenActive;
 
+    [Header("Check overlays")]
+    [SerializeField] GameObject metalsCheck;
+    [SerializeField] GameObject nonMetalsCheck;
+    [SerializeField] GameObject hydrogenCheck;
+    [SerializeField] GameObject oxygenCheck;
+
     public void SetPhaseState(PhaseKey key, PhaseState state)
     {
-        var (lockGo, activeGo) = GetUI(key);
+        var ui = GetUI(key);
 
-        if (lockGo != null)
-            lockGo.SetActive(state == PhaseState.Locked);
+        if (ui.lockGo != null)
+            ui.lockGo.SetActive(state == PhaseState.Locked);
 
-        // Si la fase no está presente, puedes ocultar el icono o dejarlo gris
-        // Aquí uso ocultar el icono:
-        var icon = GetIcon(key);
-        if (icon != null)
-            icon.gameObject.SetActive(state != PhaseState.NotPresent);
+        if (ui.checkGo != null)
+            ui.checkGo.SetActive(state == PhaseState.Completed);
 
-        // Si está completada, puedes cambiar sprite/color desde aquí si quieres
+        if (ui.icon != null)
+            ui.icon.gameObject.SetActive(state != PhaseState.NotPresent);
+
+        // Si está completada, el highlight activo no debe mostrarse
+        if (state == PhaseState.Completed && ui.activeGo != null)
+            ui.activeGo.SetActive(false);
     }
 
     public void SetActivePhase(PhaseKey? key)
@@ -47,25 +55,17 @@ public class PhaseHUDController : MonoBehaviour, IPhaseHUD
 
     void SetActive(PhaseKey key, bool on)
     {
-        var (_, activeGo) = GetUI(key);
-        if (activeGo != null) activeGo.SetActive(on);
+        var ui = GetUI(key);
+        if (ui.activeGo != null)
+            ui.activeGo.SetActive(on);
     }
 
-    Image GetIcon(PhaseKey key) => key switch
+    (Image icon, GameObject lockGo, GameObject activeGo, GameObject checkGo) GetUI(PhaseKey key) => key switch
     {
-        PhaseKey.Metals => metalsIcon,
-        PhaseKey.NonMetals => nonMetalsIcon,
-        PhaseKey.Hydrogen => hydrogenIcon,
-        PhaseKey.Oxygen => oxygenIcon,
-        _ => null
-    };
-
-    (GameObject lockGo, GameObject activeGo) GetUI(PhaseKey key) => key switch
-    {
-        PhaseKey.Metals => (metalsLock, metalsActive),
-        PhaseKey.NonMetals => (nonMetalsLock, nonMetalsActive),
-        PhaseKey.Hydrogen => (hydrogenLock, hydrogenActive),
-        PhaseKey.Oxygen => (oxygenLock, oxygenActive),
-        _ => (null, null)
+        PhaseKey.Metals => (metalsIcon, metalsLock, metalsActive, metalsCheck),
+        PhaseKey.NonMetals => (nonMetalsIcon, nonMetalsLock, nonMetalsActive, nonMetalsCheck),
+        PhaseKey.Hydrogen => (hydrogenIcon, hydrogenLock, hydrogenActive, hydrogenCheck),
+        PhaseKey.Oxygen => (oxygenIcon, oxygenLock, oxygenActive, oxygenCheck),
+        _ => (null, null, null, null)
     };
 }

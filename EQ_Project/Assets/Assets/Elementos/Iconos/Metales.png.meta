@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: b2feada5d9a3fbb42b4f65ecce5b6c81
+guid: b6524e638c90b5b46af302be11e42864
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -110,23 +110,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: O_0
+      name: Metales_0
       rect:
         serializedVersion: 2
-        x: 28
-        y: 19
-        width: 451
-        height: 458
+        x: 130
+        y: 176
+        width: 4277
+        height: 4277
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 22, y: 7, z: 5, w: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a62a04ed86569db4aa427dc2c21dfffc
-      internalID: -1687178972
+      spriteID: 8eb828b3dfd17a14fa3e75fb2248c8a0
+      internalID: 228272932
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: c5cde8540f3a3644f8b5cb45058e4120
+    spriteID: 27e744231bf7f6e47bad10b9910cff59
     internalID: 0
     vertices: []
     indices: 
@@ -145,7 +145,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      O_0: -1687178972
+      Metales_0: 228272932
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

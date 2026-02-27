@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: b2feada5d9a3fbb42b4f65ecce5b6c81
+guid: 745f244837f4b5744ade553ac3612bd8
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -110,23 +110,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: O_0
+      name: Bloqueo 1_0
       rect:
         serializedVersion: 2
-        x: 28
-        y: 19
-        width: 451
-        height: 458
+        x: 0
+        y: 0
+        width: 4501
+        height: 4467
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 22, y: 7, z: 5, w: 0}
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a62a04ed86569db4aa427dc2c21dfffc
-      internalID: -1687178972
+      spriteID: 96cff35e261aa9d4f8308073f3ed6ba3
+      internalID: -751190965
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: c5cde8540f3a3644f8b5cb45058e4120
+    spriteID: bfbf471397f4cf845a74631ea75a85a6
     internalID: 0
     vertices: []
     indices: 
@@ -145,7 +145,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      O_0: -1687178972
+      Bloqueo 1_0: -751190965
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

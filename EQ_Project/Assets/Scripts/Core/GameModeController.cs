@@ -178,13 +178,32 @@ namespace CB.Core
             var session = CurrentStation.session;
             if (session.IsBalanced())
             {
-                session.CompleteSession();
+                if (session.IsBalancedMinimal())
+                {
+                    session.CompleteSession();
+                }
+                else
+                {
+                    session.RegisterError();
+                    Debug.Log("[Balance] Balanceada pero NO mínima (simplifica coeficientes).");
+                }
             }
             else
             {
                 session.RegisterError();
                 Debug.Log("[Balance] Ecuación incorrecta");
             }
+        }
+
+        public void EnterResults()
+        {
+            State = GameState.Exploration; // o crea GameState.Results
+            ApplyState(forceActionMap: false);
+            // freeze player
+            if (playerMovement != null) playerMovement.MovementEnabled = false;
+            if (interactionSensor != null) interactionSensor.enabled = false;
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
         }
 
         void OnExitRequested()

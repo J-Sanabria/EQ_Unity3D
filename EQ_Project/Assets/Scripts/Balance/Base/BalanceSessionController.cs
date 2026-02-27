@@ -142,6 +142,31 @@ namespace CB.Balance
             );
         }
 
+        public bool IsBalancedMinimal()
+        {
+            if (!IsBalanced()) return false;
+
+            int g = 0;
+            for (int i = 0; i < coefL.Length; i++) g = Gcd(g, coefL[i]);
+            for (int i = 0; i < coefR.Length; i++) g = Gcd(g, coefR[i]);
+
+            return g == 1;
+        }
+
+        static int Gcd(int a, int b)
+        {
+            a = Mathf.Abs(a);
+            b = Mathf.Abs(b);
+            if (a == 0) return b;
+            while (b != 0)
+            {
+                int t = a % b;
+                a = b;
+                b = t;
+            }
+            return a;
+        }
+
         public void RegisterError()
         {
             errorCount++;

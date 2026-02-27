@@ -25,7 +25,7 @@ public class PhaseKeyCollectible : MonoBehaviour
     [Header("Detección")]
     [SerializeField] private LayerMask collectorLayers;
     [SerializeField] private string requiredTag = "Player";
-    [SerializeField] private bool onlyOnce = true;
+    [SerializeField] private bool onlyOnce = false;
 
     [Header("Feedback")]
     [SerializeField] private AudioClip pickupSfx;
@@ -119,5 +119,13 @@ public class PhaseKeyCollectible : MonoBehaviour
         for (int i = 0; i < renderersToHide.Length; i++)
             if (renderersToHide[i] != null)
                 renderersToHide[i].enabled = v;
+    }
+
+    public void ResetKey()
+    {
+        _available = true;
+        SetVisible(true);
+        if (triggerCollider != null) triggerCollider.enabled = true;
+        gameObject.SetActive(true);
     }
 }

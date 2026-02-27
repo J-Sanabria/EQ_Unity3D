@@ -11,8 +11,6 @@ public class EquationHUDBinding : MonoBehaviour
     BalanceSessionController session;
     BalanceSelectionController selection;
     ReactionAsset reaction;
-    [SerializeField] bool showImbalanceInExploration = false; // por defecto NO
-    [SerializeField] bool showImbalanceInBalance = true;
 
     public void SetMode(bool isBalanceMode)
 {

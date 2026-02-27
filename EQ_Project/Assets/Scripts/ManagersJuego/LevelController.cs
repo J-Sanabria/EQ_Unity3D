@@ -3,32 +3,6 @@ using UnityEngine;
 using CB.Balance;
 using CB.Core;
 
-public enum Difficulty { Tutorial, Easy, Medium, Hard }
-
-public enum LevelPhase
-{
-    Exploration,
-    Balance,
-    ReactionCompleted,
-    LevelCompleted,
-    GameCompleted
-}
-
-[CreateAssetMenu(menuName = "ChemicalBalance/ReactionPool")]
-public class ReactionPool : ScriptableObject
-{
-    public Difficulty difficulty;
-    public List<ReactionAsset> reactions; // ej: 6
-}
-
-[CreateAssetMenu(menuName = "ChemicalBalance/LevelConfig")]
-public class LevelConfig : ScriptableObject
-{
-    public Difficulty difficulty;
-    public ReactionPool reactionPool;
-    public int reactionsPerRun = 3;
-}
-
 public class LevelController : MonoBehaviour
 {
     [Header("Config")]
@@ -40,7 +14,10 @@ public class LevelController : MonoBehaviour
     [SerializeField] private BalanceResultPanel resultPanel;
     [SerializeField] private EquationHUDBinding equationHUD;
     [SerializeField] private PhaseManager phaseManager;
-
+    [SerializeField] private PhaseKeyActivator keyActivator;
+    [SerializeField] private PlayerKeyRing playerKeyRing;
+    [SerializeField] private Transform spawnPoint;
+    [SerializeField] private PlayerRespawner playerRespawner;
 
     private LevelPhase phase = LevelPhase.Exploration;
 
@@ -97,6 +74,8 @@ public class LevelController : MonoBehaviour
             return;
         }
 
+
+
         if (balanceStation == null || gameMode == null || resultPanel == null)
         {
             Debug.LogError("[LevelController] Falta referencia (balanceStation/gameMode/resultPanel)");
@@ -111,6 +90,16 @@ public class LevelController : MonoBehaviour
             Debug.LogError("[LevelController] No hay reacciones seleccionadas");
             return;
         }
+
+        if (equationHUD == null)
+            Debug.LogWarning("[LevelController] equationHUD no asignado (solo no se verá HUD).");
+
+        if (phaseManager == null)
+        {
+            Debug.LogError("[LevelController] Falta PhaseManager asignado");
+            return;
+        }
+
 
         currentIndex = 0;
         totalTime = 0f;
@@ -167,8 +156,23 @@ public class LevelController : MonoBehaviour
 
         if (equationHUD != null)
             equationHUD.SetReaction(reaction);
+        // reset llaves del jugador
+        if (playerKeyRing != null) playerKeyRing.ClearKeys();
 
+        // reinicia sesión (por si venías de una sesión vieja)
+        if (balanceStation != null && balanceStation.session != null)
+            balanceStation.session.BindStation(balanceStation); // esto clona coeficientes iniciales
+
+        // configurar fases para la nueva reacción
         phaseManager.ConfigureForReaction(balanceStation, levelConfig.difficulty);
+
+        // activar llaves según fases presentes
+        if (keyActivator != null)
+            keyActivator.SetActiveKeys(phaseManager.GetPresentPhases());
+
+        // volver a exploración
+        if (playerRespawner != null && spawnPoint != null)
+            playerRespawner.RespawnAt(spawnPoint);
 
         phase = LevelPhase.Exploration;
         gameMode.EnterExploration();
@@ -191,7 +195,6 @@ public class LevelController : MonoBehaviour
         phase = LevelPhase.Balance;
         gameMode.EnterBalance(station);
     }
-
     private void HandleSessionCompleted(BalanceResult result)
     {
         if (phase != LevelPhase.Balance)
@@ -203,7 +206,14 @@ public class LevelController : MonoBehaviour
         totalErrors += result.errors;
         totalScore += result.score;
 
+        // salir de balance
         gameMode.ExitBalance();
+
+        // pausar y mostrar cursor
+        Time.timeScale = 0f;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
         resultPanel.Show(result, ResultContext.ReactionCompleted);
     }
 
@@ -215,10 +225,18 @@ public class LevelController : MonoBehaviour
         if (phase != LevelPhase.ReactionCompleted)
             return;
 
+        ExitResultsMode();
+
         currentIndex++;
 
-        if (currentIndex < selectedReactions.Count) LoadReaction();
-        else CompleteLevel();
+        if (currentIndex < selectedReactions.Count)
+        {
+            LoadReaction();
+        }
+        else
+        {
+            CompleteLevel();
+        }
     }
 
     private void RetryCurrentReaction()
@@ -226,7 +244,10 @@ public class LevelController : MonoBehaviour
         if (phase != LevelPhase.ReactionCompleted)
             return;
 
-        // Recarga la misma reacción y vuelve a exploration limpio
+        ExitResultsMode();
+
+        // reinicia la sesión de la misma reacción
+        // IMPORTANTE: no basta con LoadReaction si tu player tiene llaves / está en balanza
         LoadReaction();
     }
 
@@ -247,5 +268,17 @@ public class LevelController : MonoBehaviour
 
         GameManager.Instance?.AddScore(totalScore);
         resultPanel.Show(summary, ResultContext.LevelCompleted);
+    }
+
+    void ExitResultsMode()
+    {
+        // 1) reanuda tiempo
+        Time.timeScale = 1f;
+
+        // 2) oculta panel
+        if (resultPanel != null) resultPanel.Hide();
+
+        // 3) vuelve a exploración (reactiva movimiento/inputs)
+        if (gameMode != null) gameMode.EnterExploration();
     }
 }

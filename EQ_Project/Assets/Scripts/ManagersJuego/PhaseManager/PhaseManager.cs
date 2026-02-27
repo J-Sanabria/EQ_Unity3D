@@ -47,19 +47,29 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
     void OnDisable()
     {
         if (session != null && session.CanAdjust == CanAdjust) session.CanAdjust = null;
+        if (session != null)
+            session.OnEquationChanged -= OnEquationChanged;
     }
 
     public void ConfigureForReaction(BalanceStation st, Difficulty diff)
     {
+        if (session != null)
+            session.OnEquationChanged -= OnEquationChanged;
+
         station = st;
         difficulty = diff;
         session = st != null ? st.session : null;
 
-        if (session != null) session.CanAdjust = CanAdjust;
+        if (session != null)
+        {
+            session.CanAdjust = CanAdjust;
+            session.OnEquationChanged += OnEquationChanged;
+        }
 
         BuildPhasePresence();
         InitStates();
         SelectInitialActivePhase();
+        EvaluatePhaseCompletion();
         PushStateToHUDs();
     }
 
@@ -83,11 +93,8 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
 
         _states[key] = PhaseState.Unlocked;
 
-        if (ShouldEnforceOrder())
-        {
-            if (_activePhase == null) _activePhase = key;
-        }
-
+        _states[key] = PhaseState.Unlocked;
+        EvaluatePhaseCompletion(); // recalcula checks + fase activa con el estado real
         PushStateToHUDs();
         return true;
     }
@@ -97,21 +104,80 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
         return enforceOrderInTutorialAndEasy && (difficulty == Difficulty.Tutorial || difficulty == Difficulty.Easy);
     }
 
+    public HashSet<PhaseKey> GetPresentPhases()
+    {
+        return new HashSet<PhaseKey>(_present);
+    }
+
     // ---------- Permissions ----------
     bool CanAdjust(int side, int index, int delta)
     {
         if (station == null || station.reaction == null) return false;
 
-        string formula = (side == 0) ? station.reaction.lhs[index] : station.reaction.rhs[index];
-        PhaseKey phaseOfCompound = PhaseOfFormula(formula);
+        var species = side == 0 ? station.reaction.lhs : station.reaction.rhs;
+        if (index < 0 || index >= species.Length) return false;
 
-        if (_states.TryGetValue(phaseOfCompound, out var state))
+        string formula = species[index];
+
+        // fases presentes en este compuesto (por elementos)
+        var phasesInFormula = GetPhasesForFormula(formula);
+
+        // Si la fórmula no tiene fases detectables (raro), no bloquees.
+        if (phasesInFormula.Count == 0) return true;
+
+        Debug.Log($"ActivePhase={_activePhase} | Formula={formula} | PhasesInFormula={string.Join(",", phasesInFormula)} | HState={_states.GetValueOrDefault(PhaseKey.Hydrogen)} | OState={_states.GetValueOrDefault(PhaseKey.Oxygen)}");
+
+        // Regla tutorial/fácil: solo se puede editar si el compuesto contiene la fase activa
+        if (ShouldEnforceOrder() && _activePhase.HasValue)
         {
-            if (state == PhaseState.Locked) return false;
-            if (ShouldEnforceOrder() && _activePhase.HasValue && phaseOfCompound != _activePhase.Value) return false;
+            var ap = _activePhase.Value;
+
+            // si el compuesto no contiene la fase activa, bloquea
+            if (!phasesInFormula.Contains(ap))
+                return false;
+
+            // si la fase activa está bloqueada, bloquea
+            return _states.TryGetValue(ap, out var st) && st != PhaseState.Locked;
+        }
+
+        // Regla libre (medio/difícil): no permitir editar compuestos que contengan alguna fase bloqueada
+        foreach (var p in phasesInFormula)
+        {
+            if (_states.TryGetValue(p, out var st) && st == PhaseState.Locked)
+                return false;
         }
 
         return true;
+    }
+
+    HashSet<PhaseKey> GetPhasesForFormula(string formula)
+    {
+        var set = new HashSet<PhaseKey>();
+
+        if (string.IsNullOrEmpty(formula))
+            return set;
+
+        var atoms = ChemFormula.Parse(formula);
+
+        bool hasMetal = false;
+        bool hasNonMetalOther = false;
+        bool hasH = atoms.ContainsKey("H");
+        bool hasO = atoms.ContainsKey("O");
+
+        foreach (var e in atoms.Keys)
+        {
+            if (e == "H" || e == "O") continue;
+
+            if (IsMetal(e)) hasMetal = true;
+            else hasNonMetalOther = true;
+        }
+
+        if (hasMetal) set.Add(PhaseKey.Metals);
+        if (hasNonMetalOther) set.Add(PhaseKey.NonMetals);
+        if (hasH) set.Add(PhaseKey.Hydrogen);
+        if (hasO) set.Add(PhaseKey.Oxygen);
+
+        return set;
     }
 
     // ---------- Presence ----------
@@ -120,8 +186,31 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
         _present.Clear();
         if (station == null || station.reaction == null) return;
 
-        foreach (var f in station.reaction.lhs) _present.Add(PhaseOfFormula(f));
-        foreach (var f in station.reaction.rhs) _present.Add(PhaseOfFormula(f));
+        bool hasMetal = false;
+        bool hasNonMetalOther = false;
+        bool hasH = false;
+        bool hasO = false;
+
+        void ScanFormula(string f)
+        {
+            var atoms = ChemFormula.Parse(f);
+            foreach (var e in atoms.Keys)
+            {
+                if (e == "H") { hasH = true; continue; }
+                if (e == "O") { hasO = true; continue; }
+
+                if (IsMetal(e)) hasMetal = true;
+                else hasNonMetalOther = true;
+            }
+        }
+
+        foreach (var f in station.reaction.lhs) ScanFormula(f);
+        foreach (var f in station.reaction.rhs) ScanFormula(f);
+
+        if (hasMetal) _present.Add(PhaseKey.Metals);
+        if (hasNonMetalOther) _present.Add(PhaseKey.NonMetals);
+        if (hasH) _present.Add(PhaseKey.Hydrogen);
+        if (hasO) _present.Add(PhaseKey.Oxygen);
     }
 
     void InitStates()
@@ -149,31 +238,111 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
         }
     }
 
-    // ---------- Classification ----------
-    PhaseKey PhaseOfFormula(string formula)
-    {
-        var atoms = ChemFormula.Parse(formula);
-
-        bool hasH = atoms.ContainsKey("H");
-        bool hasO = atoms.ContainsKey("O");
-
-        // Si tiene metal -> Metales
-        foreach (var e in atoms.Keys)
-        {
-            if (IsMetal(e)) return PhaseKey.Metals;
-        }
-
-        // Si es H puro u O puro
-        if (atoms.Count == 1 && hasH) return PhaseKey.Hydrogen;
-        if (atoms.Count == 1 && hasO) return PhaseKey.Oxygen;
-
-        // Caso general: No metales
-        return PhaseKey.NonMetals;
-    }
 
     bool IsMetal(string symbol)
     {
         if (elementDatabase == null) return false;
         return elementDatabase.GetTypeOrDefault(symbol) == ElementType.Metal;
     }
+
+    void OnEquationChanged()
+    {
+        EvaluatePhaseCompletion();
+    }
+
+    void EvaluatePhaseCompletion()
+    {
+        if (station == null || station.reaction == null || session == null)
+            return;
+
+        var imbalance = ReactionValidator.Imbalance(
+            station.reaction.lhs,
+            station.reaction.rhs,
+            session.coefL,
+            session.coefR
+        );
+
+        // Marca completadas las fases cuyo conjunto de elementos esté equilibrado
+        var keys = new List<PhaseKey>(_states.Keys);
+        foreach (var k in keys)
+        {
+            if (_states[k] == PhaseState.NotPresent) continue;
+            if (_states[k] == PhaseState.Locked) continue;
+
+            if (IsPhaseBalanced(k, imbalance))
+                _states[k] = PhaseState.Completed;
+            else if (_states[k] == PhaseState.Completed)
+                _states[k] = PhaseState.Unlocked;
+        }
+
+        // En tutorial/fácil, si la fase activa quedó completada, avanza a la siguiente
+        if (ShouldEnforceOrder())
+            _activePhase = ComputeActivePhase(imbalance);
+        else
+            _activePhase = null; // en medio/difícil puedes no forzar fase activa
+
+        PushStateToHUDs();
+    }
+
+    PhaseKey? ComputeActivePhase(Dictionary<string, int> imbalance)
+    {
+        PhaseKey[] order = { PhaseKey.Metals, PhaseKey.NonMetals, PhaseKey.Hydrogen, PhaseKey.Oxygen };
+
+        foreach (var k in order)
+        {
+            if (!_states.TryGetValue(k, out var st)) continue;
+            if (st == PhaseState.NotPresent) continue;
+
+            bool phaseBalanced = IsPhaseBalanced(k, imbalance);
+
+            // Si está desbalanceada y está locked => sigue siendo la fase activa,
+            // pero el jugador verá candado y entenderá que necesita llave.
+            if (!phaseBalanced && st == PhaseState.Locked)
+                return k;
+
+            // Si está desbalanceada y no está locked => es la fase a trabajar ahora
+            if (!phaseBalanced && st != PhaseState.Locked)
+                return k;
+        }
+
+        // Si todo está balanceado, no hay fase activa
+        return null;
+    }
+
+    bool IsPhaseBalanced(PhaseKey phase, Dictionary<string, int> imbalance)
+    {
+        foreach (var kv in imbalance)
+        {
+            string elem = kv.Key;
+            int delta = kv.Value;
+            if (delta == 0) continue;
+
+            if (ElementBelongsToPhase(elem, phase))
+                return false;
+        }
+        return true;
+    }
+
+    bool ElementBelongsToPhase(string symbol, PhaseKey phase)
+    {
+        if (phase == PhaseKey.Hydrogen) return symbol == "H";
+        if (phase == PhaseKey.Oxygen) return symbol == "O";
+
+        // Metales / NoMetales según tu DB
+        var type = elementDatabase != null
+            ? elementDatabase.GetTypeOrDefault(symbol, ElementType.NonMetal)
+            : ElementType.NonMetal;
+
+        if (phase == PhaseKey.Metals)
+            return type == ElementType.Metal;
+
+        if (phase == PhaseKey.NonMetals)
+        {
+            if (symbol == "H" || symbol == "O") return false;
+            return type == ElementType.NonMetal;
+        }
+
+        return false;
+    }
+
 }

@@ -27,7 +27,6 @@ public class InteractionSensor : MonoBehaviour
     private StarterAssetsInputs _inputs;
 
     // one-shot interact
-    private bool _prevInteract;
     private float _targetAlpha;
 
     void Awake()
@@ -52,7 +51,6 @@ public class InteractionSensor : MonoBehaviour
 
     void OnEnable()
     {
-        _prevInteract = false;
         SetCurrent(null);
         SetPromptVisible(false, immediate: true);
     }
@@ -102,7 +100,6 @@ public class InteractionSensor : MonoBehaviour
         {
             // Consume el input para evitar que se quede "pegado"
             _inputs.interact = false;
-            _prevInteract = false;
 
             if (_current != null)
                 _current.Interact(transform.root);
@@ -110,7 +107,6 @@ public class InteractionSensor : MonoBehaviour
     }
     public void ResetInteractLatch()
     {
-        _prevInteract = false;
         if (_inputs != null) _inputs.interact = false;
     }
     IInteractable FindBestCandidate()
