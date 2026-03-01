@@ -109,6 +109,13 @@ public class LevelController : MonoBehaviour
         LoadReaction();
     }
 
+    public void RestartCurrentReaction()
+    {
+        // Resetea la reacción actual sin cambiar currentIndex
+        // Esto fuerza: llaves, sesión, fases, respawn, exploración.
+        LoadReaction();
+    }
+
     // -------------------------
     // Selección de reacciones
     // -------------------------

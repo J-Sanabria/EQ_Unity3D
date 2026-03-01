@@ -18,19 +18,15 @@ public class PhaseKeyActivator : MonoBehaviour
     {
         for (int i = 0; i < keys.Count; i++)
         {
-            var obj = keys[i].keyObject;
-            if (obj == null) continue;
+            var c = keys[i].collectible;
+            if (c == null) continue;
 
             bool shouldBeActive = activeKeys.Contains(keys[i].key);
 
             if (shouldBeActive)
-            {
-                // reset físico si existe collectible
-                if (keys[i].collectible != null)
-                    keys[i].collectible.ResetKey();
-            }
-
-            obj.SetActive(shouldBeActive);
+                c.ResetKey();
+            else
+                c.gameObject.SetActive(false);
         }
     }
 }

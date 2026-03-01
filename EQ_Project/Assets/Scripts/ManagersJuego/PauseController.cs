@@ -1,40 +1,54 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class PauseController : MonoBehaviour
 {
-    [Header("Refs")]
+    [Header("Panels")]
     [SerializeField] GameObject pausePanel;
+    [SerializeField] GameObject settingsPanel;
+
+    [Header("Refs")]
     [SerializeField] CB.Core.GameModeController gameMode;
+    [SerializeField] LevelController levelController;
 
     [Header("Input")]
-    [SerializeField] PlayerInput playerInput;
-    [SerializeField] string pauseActionName = "Pause"; // debe existir en ambos maps o en un map global
+    [SerializeField] InputActionReference pauseAction;   // Player/Pause (ESC)
+    [SerializeField] string allowedActionMap = "Player";  // solo exploración
 
     bool _paused;
+    bool _wasCursorVisible;
+    CursorLockMode _wasLockMode;
+
+    void Awake()
+    {
+        if (pausePanel) pausePanel.SetActive(false);
+        if (settingsPanel) settingsPanel.SetActive(false);
+    }
 
     void OnEnable()
     {
-        if (playerInput != null)
-            playerInput.onActionTriggered += OnActionTriggered;
+        if (pauseAction?.action != null)
+        {
+            pauseAction.action.performed += OnPausePerformed;
+            pauseAction.action.Enable();
+        }
     }
 
     void OnDisable()
     {
-        if (playerInput != null)
-            playerInput.onActionTriggered -= OnActionTriggered;
+        if (pauseAction?.action != null)
+        {
+            pauseAction.action.performed -= OnPausePerformed;
+            pauseAction.action.Disable();
+        }
     }
 
-    void OnActionTriggered(InputAction.CallbackContext ctx)
+    void OnPausePerformed(InputAction.CallbackContext _)
     {
-        Debug.Log("Si entra a puase");
-        if (ctx.action == null) return;
-        if (!ctx.performed) return;
-        if (ctx.action.name != pauseActionName) return;
-
-        // Solo permitir si el mapa activo es Player
-        if (playerInput == null || playerInput.currentActionMap == null) return;
-        if (playerInput.currentActionMap.name != "Player") return;
+        // Solo permitir en exploración (tu Balance usa ESC para Exit)
+        if (gameMode == null) return;
+        if (gameMode.State != CB.Core.GameState.Exploration) return;
 
         TogglePause();
     }
@@ -50,16 +64,19 @@ public class PauseController : MonoBehaviour
         if (_paused) return;
         _paused = true;
 
-        Time.timeScale = 0f;
-        if (pausePanel) pausePanel.SetActive(true);
+        // Guardar cursor
+        _wasCursorVisible = Cursor.visible;
+        _wasLockMode = Cursor.lockState;
 
-        // bloquear gameplay
+        Time.timeScale = 0f;
+
+        // Bloquea jugador (manteniendo exploración)
         if (gameMode != null)
-        {
-            // quedarte en el mismo State, pero congelar jugador:
-            // lo más simple: forzar exploración y dejar MovementEnabled=false
-            gameMode.EnterExploration();
-        }
+            gameMode.EnterExploration(); // garantiza que no quede en balance
+
+        // UI
+        if (pausePanel) pausePanel.SetActive(true);
+        if (settingsPanel) settingsPanel.SetActive(false);
 
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
@@ -71,15 +88,52 @@ public class PauseController : MonoBehaviour
         _paused = false;
 
         Time.timeScale = 1f;
+
         if (pausePanel) pausePanel.SetActive(false);
+        if (settingsPanel) settingsPanel.SetActive(false);
 
-        // volver a permitir gameplay según el estado actual:
-        // Si estabas en balanceo antes, necesitarías recordar ese estado.
-        // Para prototipo: vuelve a exploración.
-        if (gameMode != null)
-            gameMode.EnterExploration();
+        // Restaurar cursor como lo tengas en gameplay
+        Cursor.visible = _wasCursorVisible;
+        Cursor.lockState = _wasLockMode;
+    }
 
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.None;
+    // ---------- UI Buttons ----------
+
+    public void UI_Continue()
+    {
+        Resume();
+    }
+
+    public void UI_OpenSettings()
+    {
+        if (settingsPanel) settingsPanel.SetActive(true);
+        if (pausePanel) pausePanel.SetActive(false);
+    }
+
+    public void UI_BackFromSettings()
+    {
+        if (settingsPanel) settingsPanel.SetActive(false);
+        if (pausePanel) pausePanel.SetActive(true);
+    }
+
+    public void UI_RestartReaction()
+    {
+        // Reanuda tiempo antes de reiniciar flujo
+        Time.timeScale = 1f;
+        _paused = false;
+
+        if (pausePanel) pausePanel.SetActive(false);
+        if (settingsPanel) settingsPanel.SetActive(false);
+
+        if (levelController != null)
+            levelController.RestartCurrentReaction();
+    }
+
+    public void UI_ExitToMainMenu()
+    {
+        Time.timeScale = 1f;
+        _paused = false;
+
+        SceneManager.LoadScene("MenuInicio");
     }
 }

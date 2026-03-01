@@ -1,53 +1,57 @@
+using System.Collections;
 using StarterAssets;
 using UnityEngine;
 
+[RequireComponent(typeof(CharacterController))]
 public class PlayerRespawner : MonoBehaviour
 {
     [Header("Refs")]
     [SerializeField] Transform playerRoot;
-    [SerializeField] CharacterController characterController;
-    [SerializeField] ThirdPersonController thirdPersonController;
-    [SerializeField] StarterAssetsInputs starterInputs;
+    CharacterController _cc;
+    ThirdPersonController _tpc;
+    StarterAssetsInputs _inputs;
 
     void Awake()
     {
-        // Si no se asignó en inspector, auto-detecta en runtime
         if (playerRoot == null) playerRoot = transform;
-
-        if (characterController == null)
-            characterController = playerRoot.GetComponentInChildren<CharacterController>();
-
-        if (thirdPersonController == null)
-            thirdPersonController = playerRoot.GetComponentInChildren<ThirdPersonController>();
-
-        if (starterInputs == null)
-            starterInputs = playerRoot.GetComponentInChildren<StarterAssetsInputs>();
+        _cc = playerRoot.GetComponentInChildren<CharacterController>();
+        _tpc = playerRoot.GetComponentInChildren<ThirdPersonController>();
+        _inputs = playerRoot.GetComponentInChildren<StarterAssetsInputs>();
     }
 
     public void RespawnAt(Transform spawnPoint)
     {
-        if (playerRoot == null || spawnPoint == null) return;
+        if (spawnPoint == null) return;
+        StopAllCoroutines();
+        StartCoroutine(RespawnRoutine(spawnPoint.position, spawnPoint.rotation));
+    }
 
-        // Limpia inputs
-        if (starterInputs != null)
+    IEnumerator RespawnRoutine(Vector3 pos, Quaternion rot)
+    {
+        // limpiar inputs
+        if (_inputs != null)
         {
-            starterInputs.move = Vector2.zero;
-            starterInputs.jump = false;
-            starterInputs.sprint = false;
-            starterInputs.look = Vector2.zero;
-            starterInputs.interact = false;
+            _inputs.move = Vector2.zero;
+            _inputs.jump = false;
+            _inputs.sprint = false;
+            _inputs.look = Vector2.zero;
+            _inputs.interact = false;
         }
 
-        // Apaga CC para evitar colisiones raras
-        bool hadCC = characterController != null && characterController.enabled;
-        if (characterController != null) characterController.enabled = false;
+        // desactiva controlador (más fuerte que MovementEnabled)
+        if (_tpc != null) _tpc.enabled = false;
 
-        playerRoot.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
+        if (_cc != null) _cc.enabled = false;
 
-        if (characterController != null) characterController.enabled = hadCC;
+        playerRoot.SetPositionAndRotation(pos, rot);
 
-        // Asegura movimiento habilitado (GameMode lo controla luego igual)
-        if (thirdPersonController != null)
-            thirdPersonController.MovementEnabled = true;
+        Physics.SyncTransforms();
+        yield return null;
+
+        if (_cc != null) _cc.enabled = true;
+
+        yield return null;
+
+        if (_tpc != null) _tpc.enabled = true;
     }
 }
