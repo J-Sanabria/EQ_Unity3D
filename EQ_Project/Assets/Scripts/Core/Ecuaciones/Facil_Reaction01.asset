@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 003129d3629b07140a3b1d5f58c08fc2, type: 3}
   m_Name: Facil_Reaction01
   m_EditorClassIdentifier: 
-  reactionId: rxn_001
+  reactionId: Easy_001
   title: 
   lhs:
   - N2

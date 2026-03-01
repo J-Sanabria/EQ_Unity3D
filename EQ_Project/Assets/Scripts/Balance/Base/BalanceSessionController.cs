@@ -32,6 +32,7 @@ namespace CB.Balance
         [SerializeField] private int penaltyPerError = 100;
         [SerializeField] private int minScore = 0;
 
+        string _boundReactionId;
         public BalanceStation Station { get; private set; }
 
         /// <summary>
@@ -57,9 +58,29 @@ namespace CB.Balance
         {
             Station = station;
 
-            InitFromReaction();
-            ResetMetrics();
-            running = true;
+            string rid = Station != null && Station.reaction != null ? Station.reaction.reactionId : null;
+
+            bool sameReaction =
+                !string.IsNullOrEmpty(rid) &&
+                rid == _boundReactionId &&
+                coefL != null && coefR != null &&
+                Station.reaction != null &&
+                coefL.Length == Station.reaction.lhs.Length &&
+                coefR.Length == Station.reaction.rhs.Length;
+
+            if (!sameReaction)
+            {
+                _boundReactionId = rid;
+                InitFromReaction();
+                ResetMetrics(); // opcional: si NO quieres resetear tiempo/errores al re-entrar, solo hazlo aquí
+                running = true;
+            }
+            else
+            {
+                // misma reacción: NO toques coeficientes
+                running = true;
+                OnEquationChanged?.Invoke(); // refresca HUD al entrar
+            }
         }
 
         void InitFromReaction()

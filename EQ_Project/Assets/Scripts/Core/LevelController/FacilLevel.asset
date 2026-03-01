@@ -9,15 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 003129d3629b07140a3b1d5f58c08fc2, type: 3}
-  m_Name: Facil_Reaction02
+  m_Script: {fileID: 11500000, guid: 48afbe3f8a0fb1c439fe52add11c82c4, type: 3}
+  m_Name: FacilLevel
   m_EditorClassIdentifier: 
-  reactionId: rxn_001
-  title: 
-  lhs:
-  - Na
-  - Cl2
-  rhs:
-  - NaCl
-  coefL: 0200000001000000
-  coefR: 02000000
+  difficulty: 1
+  reactionPool: {fileID: 11400000, guid: dc6cd6f7eac2cbf4f811619c53e620c1, type: 2}
+  reactionsPerRun: 3

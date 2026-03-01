@@ -32,7 +32,7 @@ namespace CB.Core
 
         [Header("Input")]
         [SerializeField] PlayerInput playerInput;
-        [SerializeField] string explorationMap = "Gameplay";
+        [SerializeField] string explorationMap = "Player";
         [SerializeField] string balanceMap = "Balance";
 
         public event System.Action<GameState> OnStateChanged;
