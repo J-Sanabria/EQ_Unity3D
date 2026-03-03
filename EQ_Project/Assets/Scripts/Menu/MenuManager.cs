@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
@@ -12,6 +11,9 @@ public class MenuManager : MonoBehaviour
     [SerializeField] GameObject panelSalir;
     [SerializeField] GameObject panelEstudiante; // panel de estudiante
     [SerializeField] GameObject panelProfesor;   // panel de profesor
+    [SerializeField] GameObject panelCrearUsuario;
+
+
     [SerializeField] LevelConfig tutorialLevelConfig; // asigna en inspector
     [SerializeField] string tutorialSceneName = "Tutorial";
 
@@ -38,6 +40,7 @@ public class MenuManager : MonoBehaviour
     void ShowOnly(GameObject target, bool clearStack = false)
     {
         // Desactiva todos
+        if (panelCrearUsuario) panelCrearUsuario.SetActive(false);
         if (panelInicio) panelInicio.SetActive(false);
         if (panelConfiguracion) panelConfiguracion.SetActive(false);
         if (panelEscogerRol) panelEscogerRol.SetActive(false);
@@ -103,6 +106,10 @@ public class MenuManager : MonoBehaviour
         if (panelProfesor != null) GoTo(panelProfesor);
         else Debug.Log("Abrir flujo de Profesor (cargar escena o activar panel).");
     }
+        public void OnClick_IrACrearUsuario()
+    {
+        if (panelCrearUsuario != null) GoTo(panelCrearUsuario);
+    }
 
     // =========================================================
     // Confirmar salida
@@ -148,7 +155,7 @@ public class MenuManager : MonoBehaviour
         }
 
         // Siempre mostrar confirmación con el nombre elegido
-        if (txtUsuario) txtUsuario.text = ("Quieres continuar ") + user;
+        if (txtUsuario) txtUsuario.text = ("Quieres comenzar el juego con el usuario ") + user;
         GoTo(panelConfirmUsuario);
     }
 
