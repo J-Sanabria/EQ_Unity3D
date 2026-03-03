@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 48afbe3f8a0fb1c439fe52add11c82c4, type: 3}
   m_Name: TutorialLevel
   m_EditorClassIdentifier: Assembly-CSharp::LevelConfig
   difficulty: 0
   reactionPool: {fileID: 11400000, guid: 7c66aeaa248913a4aa6b6865dfbdfdf5, type: 2}
-  reactionsPerRun: 2
+  reactionsPerRun: 1

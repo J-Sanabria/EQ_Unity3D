@@ -96,6 +96,8 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
         _states[key] = PhaseState.Unlocked;
         EvaluatePhaseCompletion(); // recalcula checks + fase activa con el estado real
         PushStateToHUDs();
+
+        FindFirstObjectByType<PhaseGateController>()?.OnKeyPicked(key);
         return true;
     }
 

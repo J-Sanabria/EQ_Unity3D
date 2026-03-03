@@ -6,27 +6,26 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("Level Flow")]
+    [Header("Default Level")]
     [SerializeField] LevelConfig initialLevel;
 
     public string CurrentUser { get; private set; }
     public int CurrentScore { get; private set; }
 
+    // Flag: solo auto-start si venimos de “StartGame”
+    bool _shouldAutoStartLevel;
+
     void Awake()
     {
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+        if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (UserDB.Instance != null)
-            CurrentUser = UserDB.Instance.GetCurrentUser();
-
         SceneManager.sceneLoaded += OnSceneLoaded;
+
+        // NO leas CurrentUser aquí como “verdad”.
+        // El menú define el usuario y debe llamarte a SetCurrentUser.
+        CurrentUser = UserDB.Instance != null ? UserDB.Instance.GetCurrentUser() : "";
     }
 
     void OnDestroy()
@@ -35,38 +34,64 @@ public class GameManager : MonoBehaviour
             SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    void Start()
+    public void SetCurrentUser(string user)
     {
-        // Arranque inicial (en la escena actual)
-        StartCoroutine(StartLevelWhenReady());
+        CurrentUser = string.IsNullOrWhiteSpace(user) ? "" : user.Trim();
+        if (UserDB.Instance != null) UserDB.Instance.SetCurrentUser(CurrentUser);
+    }
+
+    public void StartNewGame(string sceneName, LevelConfig levelConfig)
+    {
+        if (string.IsNullOrEmpty(CurrentUser))
+        {
+            Debug.LogWarning("[GameManager] StartNewGame: no hay usuario actual.");
+            return;
+        }
+
+        if (levelConfig == null || levelConfig.reactionPool == null)
+        {
+            Debug.LogError("[GameManager] StartNewGame: LevelConfig inválido.");
+            return;
+        }
+
+        initialLevel = levelConfig;
+        CurrentScore = 0;
+
+        _shouldAutoStartLevel = true;
+        SceneManager.LoadScene(sceneName);
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Si cambias de escena en el futuro, reinicia el flujo aquí también
+        if (!_shouldAutoStartLevel) return;
+
+        // Intenta arrancar solo si existe LevelController
         StartCoroutine(StartLevelWhenReady());
     }
 
     IEnumerator StartLevelWhenReady()
     {
-        // espera 1 frame para que todo haga Awake/OnEnable
         yield return null;
 
-        if (initialLevel == null || initialLevel.reactionPool == null)
-        {
-            Debug.LogError("[GameManager] initialLevel inválido o sin reactionPool asignado");
-            yield break;
-        }
-
-        // Busca el LevelController de la escena activa
         var lc = Object.FindFirstObjectByType<LevelController>();
         if (lc == null)
         {
-            Debug.LogError("[GameManager] No encontré LevelController en la escena activa");
+            // Esta escena no es gameplay. No hagas nada.
+            _shouldAutoStartLevel = false;
+            yield break;
+        }
+
+        if (initialLevel == null || initialLevel.reactionPool == null)
+        {
+            Debug.LogError("[GameManager] initialLevel inválido al cargar gameplay.");
+            _shouldAutoStartLevel = false;
             yield break;
         }
 
         lc.StartLevel(initialLevel);
+
+        // Ya arrancó; si vuelves a cargar otra escena gameplay desde menú, StartNewGame vuelve a activar esto.
+        _shouldAutoStartLevel = false;
     }
 
     public void AddScore(int amount)
@@ -80,6 +105,6 @@ public class GameManager : MonoBehaviour
         if (!string.IsNullOrEmpty(CurrentUser) && UserDB.Instance != null)
             UserDB.Instance.RecordScore(CurrentUser, CurrentScore);
 
-        Debug.Log($"Puntaje final guardado: {CurrentUser} -> {CurrentScore}");
+        Debug.Log($"[GameManager] Puntaje final guardado: {CurrentUser} -> {CurrentScore}");
     }
 }

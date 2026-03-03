@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
@@ -13,6 +12,8 @@ public class MenuManager : MonoBehaviour
     [SerializeField] GameObject panelSalir;
     [SerializeField] GameObject panelEstudiante; // panel de estudiante
     [SerializeField] GameObject panelProfesor;   // panel de profesor
+    [SerializeField] LevelConfig tutorialLevelConfig; // asigna en inspector
+    [SerializeField] string tutorialSceneName = "Tutorial";
 
     [Header("Confirmación de usuario")]
     [SerializeField] GameObject panelConfirmUsuario;
@@ -159,12 +160,26 @@ public class MenuManager : MonoBehaviour
 
     void StartGame()
     {
-        string user = UserDB.Instance != null ? UserDB.Instance.GetCurrentUser() : "";
-        if (string.IsNullOrEmpty(user))
+        if (UserDB.Instance == null)
         {
-            Debug.LogWarning("No hay usuario actual.");
+            Debug.LogWarning("[Menu] UserDB no está listo.");
             return;
         }
-        SceneManager.LoadScene("Tutorial");
+
+        string user = UserDB.Instance.GetCurrentUser();
+        if (string.IsNullOrEmpty(user))
+        {
+            Debug.LogWarning("[Menu] No hay usuario actual.");
+            return;
+        }
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("[Menu] No existe GameManager en escena.");
+            return;
+        }
+
+        GameManager.Instance.SetCurrentUser(user);
+        GameManager.Instance.StartNewGame(tutorialSceneName, tutorialLevelConfig);
     }
 }

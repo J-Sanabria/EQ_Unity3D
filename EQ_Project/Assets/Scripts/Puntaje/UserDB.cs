@@ -80,7 +80,11 @@ public class UserDB : MonoBehaviour
 
     public bool RemoveUser(string name)
     {
-        var u = db.users.FirstOrDefault(x => x.name == name);
+        if (string.IsNullOrWhiteSpace(name)) return false;
+
+        var u = db.users.FirstOrDefault(x =>
+            string.Equals(x.name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+
         if (u == null) return false;
         db.users.Remove(u);
         Save();
@@ -113,7 +117,13 @@ public class UserDB : MonoBehaviour
     }
 
     // ---------- Usuario actual ----------
-    public void SetCurrentUser(string name) => PlayerPrefs.SetString(PREF_CURRENT_USER, name);
+    public void SetCurrentUser(string name)
+    {
+        name = string.IsNullOrWhiteSpace(name) ? "" : name.Trim();
+        PlayerPrefs.SetString(PREF_CURRENT_USER, name);
+        PlayerPrefs.Save();
+    }
+
     public string GetCurrentUser() => PlayerPrefs.GetString(PREF_CURRENT_USER, "");
     public bool HasCurrentUser() => !string.IsNullOrEmpty(GetCurrentUser());
 }

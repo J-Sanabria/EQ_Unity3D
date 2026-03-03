@@ -18,6 +18,7 @@ public class LevelController : MonoBehaviour
     [SerializeField] private PlayerKeyRing playerKeyRing;
     [SerializeField] private Transform spawnPoint;
     [SerializeField] private PlayerRespawner playerRespawner;
+    [SerializeField] PhaseGateController gateController;
 
     private LevelPhase phase = LevelPhase.Exploration;
 
@@ -176,6 +177,9 @@ public class LevelController : MonoBehaviour
         // activar llaves según fases presentes
         if (keyActivator != null)
             keyActivator.SetActiveKeys(phaseManager.GetPresentPhases());
+
+        if (gateController != null)
+            gateController.Configure(phaseManager.GetPresentPhases(), levelConfig.difficulty);
 
         // volver a exploración
         if (playerRespawner != null && spawnPoint != null)
