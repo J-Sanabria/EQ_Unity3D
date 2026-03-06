@@ -41,12 +41,12 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
 
     void OnEnable()
     {
-        if (session != null) session.CanAdjust = CanAdjust;
+        if (session != null) session.CanAdjustReason = CanAdjust;
     }
 
     void OnDisable()
     {
-        if (session != null && session.CanAdjust == CanAdjust) session.CanAdjust = null;
+        if (session != null && session.CanAdjustReason == CanAdjust) session.CanAdjustReason = null;
         if (session != null)
             session.OnEquationChanged -= OnEquationChanged;
     }
@@ -62,7 +62,7 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
 
         if (session != null)
         {
-            session.CanAdjust = CanAdjust;
+            session.CanAdjustReason = CanAdjust;
             session.OnEquationChanged += OnEquationChanged;
         }
 
@@ -112,45 +112,49 @@ public class PhaseManager : MonoBehaviour, IKeyReceiver
     }
 
     // ---------- Permissions ----------
-    bool CanAdjust(int side, int index, int delta)
+    AdjustBlockReason CanAdjust(int side, int index, int delta)
+{
+    if (station == null || station.reaction == null) 
+        return AdjustBlockReason.PhaseLocked;
+
+    // ¿Hay al menos una fase desbloqueada/completed? (llave conseguida)
+    bool hasAnyKey = false;
+    foreach (var kv in _states)
     {
-        if (station == null || station.reaction == null) return false;
-
-        var species = side == 0 ? station.reaction.lhs : station.reaction.rhs;
-        if (index < 0 || index >= species.Length) return false;
-
-        string formula = species[index];
-
-        // fases presentes en este compuesto (por elementos)
-        var phasesInFormula = GetPhasesForFormula(formula);
-
-        // Si la fórmula no tiene fases detectables (raro), no bloquees.
-        if (phasesInFormula.Count == 0) return true;
-
-        Debug.Log($"ActivePhase={_activePhase} | Formula={formula} | PhasesInFormula={string.Join(",", phasesInFormula)} | HState={_states.GetValueOrDefault(PhaseKey.Hydrogen)} | OState={_states.GetValueOrDefault(PhaseKey.Oxygen)}");
-
-        // Regla tutorial/fácil: solo se puede editar si el compuesto contiene la fase activa
-        if (ShouldEnforceOrder() && _activePhase.HasValue)
+        if (kv.Value == PhaseState.Unlocked || kv.Value == PhaseState.Completed)
         {
-            var ap = _activePhase.Value;
-
-            // si el compuesto no contiene la fase activa, bloquea
-            if (!phasesInFormula.Contains(ap))
-                return false;
-
-            // si la fase activa está bloqueada, bloquea
-            return _states.TryGetValue(ap, out var st) && st != PhaseState.Locked;
+            hasAnyKey = true;
+            break;
         }
-
-        // Regla libre (medio/difícil): no permitir editar compuestos que contengan alguna fase bloqueada
-        foreach (var p in phasesInFormula)
-        {
-            if (_states.TryGetValue(p, out var st) && st == PhaseState.Locked)
-                return false;
-        }
-
-        return true;
     }
+    if (!hasAnyKey)
+        return AdjustBlockReason.NoKeys;
+
+    var species = side == 0 ? station.reaction.lhs : station.reaction.rhs;
+    if (index < 0 || index >= species.Length) 
+        return AdjustBlockReason.PhaseLocked;
+
+    string formula = species[index];
+    var phasesInFormula = GetPhasesForFormula(formula);
+    if (phasesInFormula.Count == 0) 
+        return AdjustBlockReason.None;
+
+    // Si el compuesto contiene alguna fase que sigue Locked -> no puedes
+    foreach (var p in phasesInFormula)
+    {
+        if (_states.TryGetValue(p, out var st) && st == PhaseState.Locked)
+            return AdjustBlockReason.PhaseLocked;
+    }
+
+    // Solo en Tutorial/Easy se fuerza ORDEN
+    if (ShouldEnforceOrder() && _activePhase.HasValue)
+    {
+        if (!phasesInFormula.Contains(_activePhase.Value))
+            return AdjustBlockReason.WrongPhaseOrder;
+    }
+
+    return AdjustBlockReason.None;
+}
 
     HashSet<PhaseKey> GetPhasesForFormula(string formula)
     {

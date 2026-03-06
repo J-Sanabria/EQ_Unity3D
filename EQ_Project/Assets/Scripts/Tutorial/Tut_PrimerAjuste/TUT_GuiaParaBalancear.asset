@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e42884b0d50479b43955772fdf15b638, type: 3}
+  m_Name: TUT_GuiaParaBalancear
+  m_EditorClassIdentifier: 
+  stepId: GuiaParaBalancear
+  speakerName: Dalton
+  portrait: {fileID: -952943033, guid: 34922c41b6f9812498ee2e7236d44369, type: 3}
+  autoCloseByTime: 0
+  autoCloseSeconds: 6
+  delayBeforeShow: 0
+  delayUsesUnscaledTime: 1
+  pauseWhileShowing: 1
+  text: "En H\u2082 + O\u2082 \u2192 H\u2082O, f\xEDjate en los sub\xEDndices: H\u2082
+    tiene 2 H, O\u2082 tiene 2 O, y H\u2082O tiene 2 H y 1 O. Tu trabajo es que haya
+    la misma cantidad de H y O a ambos lados."
+  hint: Enter - Continuar | Espacio - Saltar texto
+  advanceMode: 0
+  requiredFlag: 

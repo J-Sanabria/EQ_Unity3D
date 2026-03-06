@@ -20,10 +20,8 @@ MonoBehaviour:
   delayBeforeShow: 0
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: "La idea era simple: hacer que las reacciones se equilibraran m\xE1s r\xE1pido.\nPero
-    parece que forzar el equilibrio no fue\u2026 buena idea.\nY cuando una reacci\xF3n
-    no est\xE1 bien balanceada, el universo decide que tampoco lo est\xE9.\nPor eso
-    todo se ve raro.\nPor eso yo me veo raro."
+  text: "Creo que intent\xE9 \u201Cmejorar\u201D la balanza\u2026 y termin\xE9 deformando
+    el laboratorio.\nPero tranquilo: se puede arreglar."
   hint: Enter - Continuar | Espacio - Saltar texto
   advanceMode: 0
   requiredFlag: 

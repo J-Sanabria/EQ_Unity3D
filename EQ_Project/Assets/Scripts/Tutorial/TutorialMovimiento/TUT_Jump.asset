@@ -14,13 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stepId: Movement_02
   speakerName: Dalton
-  portrait: {fileID: 1070078605, guid: 34922c41b6f9812498ee2e7236d44369, type: 3}
+  portrait: {fileID: -952943033, guid: 34922c41b6f9812498ee2e7236d44369, type: 3}
   autoCloseByTime: 0
   autoCloseSeconds: 6
   delayBeforeShow: 1
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: "Tambi\xE9n debes poder saltar con la tecla \"Espacio\""
+  text: "Si necesitas saltar, usa Espacio.\nS\xED\u2026 ahora adem\xE1s de qu\xEDmico,
+    soy personaje jugable."
   hint: Enter - Continuar | Espacio - Saltar texto
-  advanceMode: 1
-  requiredFlag: Jump
+  advanceMode: 0
+  requiredFlag: 

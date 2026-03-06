@@ -14,11 +14,14 @@ public class PauseController : MonoBehaviour
 
     [Header("Input")]
     [SerializeField] InputActionReference pauseAction;   // Player/Pause (ESC)
-    [SerializeField] string allowedActionMap = "Player";  // solo exploración
+    [SerializeField] ActionMapSwitcher mapSwitcher;       // <- IMPORTANTE
+
+    [SerializeField] TutorialManager tutorial;
 
     bool _paused;
     bool _wasCursorVisible;
     CursorLockMode _wasLockMode;
+    float _prevTimeScale = 1f;
 
     void Awake()
     {
@@ -31,7 +34,6 @@ public class PauseController : MonoBehaviour
         if (pauseAction?.action != null)
         {
             pauseAction.action.performed += OnPausePerformed;
-            pauseAction.action.Enable();
         }
     }
 
@@ -40,19 +42,24 @@ public class PauseController : MonoBehaviour
         if (pauseAction?.action != null)
         {
             pauseAction.action.performed -= OnPausePerformed;
-            pauseAction.action.Disable();
         }
     }
 
     void OnPausePerformed(InputAction.CallbackContext _)
     {
-        // Solo permitir en exploración (tu Balance usa ESC para Exit)
         if (gameMode == null) return;
+
+        // Si hay UI modal activa (Resultados / Nivel completado / etc), NO PAUSAR
+        if (mapSwitcher != null && mapSwitcher.IsUIActive) return;
+
+        // Solo permitir pausa en exploración
         if (gameMode.State != CB.Core.GameState.Exploration) return;
+
+        // Opcional: si el mapa actual no es Player, no pausar
+        if (mapSwitcher != null && mapSwitcher.CurrentMapName != "Player") return;
 
         TogglePause();
     }
-
     public void TogglePause()
     {
         if (_paused) Resume();
@@ -64,15 +71,20 @@ public class PauseController : MonoBehaviour
         if (_paused) return;
         _paused = true;
 
-        // Guardar cursor
+        // Guardar cursor + timeScale
         _wasCursorVisible = Cursor.visible;
         _wasLockMode = Cursor.lockState;
+        _prevTimeScale = Time.timeScale;
 
+        // Congelar mundo
         Time.timeScale = 0f;
 
-        // Bloquea jugador (manteniendo exploración)
+        // Asegura exploración (no balance)
         if (gameMode != null)
-            gameMode.EnterExploration(); // garantiza que no quede en balance
+            gameMode.EnterExploration();
+
+        // Cambia a UI action map
+        mapSwitcher?.PushUI();
 
         // UI
         if (pausePanel) pausePanel.SetActive(true);
@@ -87,22 +99,21 @@ public class PauseController : MonoBehaviour
         if (!_paused) return;
         _paused = false;
 
-        Time.timeScale = 1f;
-
+        // Cierra UI
         if (pausePanel) pausePanel.SetActive(false);
         if (settingsPanel) settingsPanel.SetActive(false);
 
-        // Restaurar cursor como lo tengas en gameplay
+        // Vuelve al action map anterior (Player normalmente)
+        mapSwitcher?.Pop();
+
+        // Restaura timeScale/cursor
+        Time.timeScale = _prevTimeScale <= 0f ? 1f : _prevTimeScale;
         Cursor.visible = _wasCursorVisible;
         Cursor.lockState = _wasLockMode;
     }
 
     // ---------- UI Buttons ----------
-
-    public void UI_Continue()
-    {
-        Resume();
-    }
+    public void UI_Continue() => Resume();
 
     public void UI_OpenSettings()
     {
@@ -118,22 +129,22 @@ public class PauseController : MonoBehaviour
 
     public void UI_RestartReaction()
     {
-        // Reanuda tiempo antes de reiniciar flujo
-        Time.timeScale = 1f;
-        _paused = false;
+        // Cierra pausa correctamente
+        Resume();
 
-        if (pausePanel) pausePanel.SetActive(false);
-        if (settingsPanel) settingsPanel.SetActive(false);
-
+        // Reinicia
         if (levelController != null)
             levelController.RestartCurrentReaction();
     }
 
     public void UI_ExitToMainMenu()
     {
+        // Cierra pausa y deja el juego “normal”
+        if (_paused) Resume();
         Time.timeScale = 1f;
-        _paused = false;
 
         SceneManager.LoadScene("MenuInicio");
     }
+
+
 }

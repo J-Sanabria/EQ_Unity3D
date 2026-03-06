@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d470c12d5a42b1a4c81330cf45ce95f2, type: 3}
+  m_Name: FacilPoolReaction
+  m_EditorClassIdentifier: 
+  difficulty: 1
+  reactions:
+  - {fileID: 11400000, guid: de4406fe94e68d2428ae10108ba9bbfd, type: 2}
+  - {fileID: 11400000, guid: c4a475a3a173f43419b29677a7e77412, type: 2}
+  - {fileID: 11400000, guid: bbee82e803e5d9041acbdf066f039fdb, type: 2}
+  - {fileID: 11400000, guid: cd10875d0764aef42933aa459eea49a1, type: 2}
+  - {fileID: 11400000, guid: 7bcd9ed56b840144ea5f09c32b6531fb, type: 2}
+  - {fileID: 11400000, guid: 9f893f00ba3dd5841baf8e33ec0e346c, type: 2}

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 320ec5d9af56c6c43bece118a4d9d5ae, type: 3}
+  m_Name: TUT_BLOCK_Llaves
+  m_EditorClassIdentifier: 
+  blockId: Llaves
+  steps:
+  - {fileID: 11400000, guid: 544d6e689e3cb42438d5fdb0374b7a8e, type: 2}
+  - {fileID: 11400000, guid: f10f209fe921e7047a0888fbc3ef00d0, type: 2}

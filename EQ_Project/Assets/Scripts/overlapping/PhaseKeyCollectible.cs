@@ -1,6 +1,4 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.Events;
 
 public enum PhaseKey
 {
@@ -30,6 +28,8 @@ public class PhaseKeyCollectible : MonoBehaviour
     [SerializeField] private AudioClip pickupSfx;
     [SerializeField] private ParticleSystem pickupVfx;
 
+    [SerializeField] TutorialManager tutorial;
+
     Collider _col;
     AudioSource _audio;
 
@@ -55,6 +55,8 @@ public class PhaseKeyCollectible : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+
+
         // Layer filter
         if (((1 << other.gameObject.layer) & collectorLayers.value) == 0) return;
 
@@ -64,13 +66,18 @@ public class PhaseKeyCollectible : MonoBehaviour
         var receiver = other.GetComponentInParent<IKeyReceiver>();
         if (receiver == null) return;
 
-        if (!receiver.ReceiveKey(key, transform)) return;
-
+        if (!receiver.ReceiveKey(key, transform)){
+   
+            return;
+        }
         if (pickupVfx != null)
             Instantiate(pickupVfx, transform.position, Quaternion.identity);
 
         if (_audio != null && pickupSfx != null)
             _audio.PlayOneShot(pickupSfx);
+
+        if (tutorial != null)
+            tutorial?.PlayEventOnce(TutorialEvent.FirstKeyPicked);
 
         // Desactivar COMPLETO: más simple que apagar render
         gameObject.SetActive(false);

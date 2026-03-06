@@ -28,3 +28,39 @@ MonoBehaviour:
   - symbol: Cl
     type: 1
     cpkColor: {r: 0, g: 1, b: 0, a: 0}
+  - symbol: Mg
+    type: 0
+    cpkColor: {r: 0.16470589, g: 0.5019608, b: 0.16470589, a: 0}
+  - symbol: F
+    type: 1
+    cpkColor: {r: 1, g: 1, b: 0, a: 0}
+  - symbol: I
+    type: 1
+    cpkColor: {r: 0.627451, g: 0.1254902, b: 0.9411765, a: 0}
+  - symbol: S
+    type: 1
+    cpkColor: {r: 1, g: 1, b: 0, a: 0}
+  - symbol: K
+    type: 0
+    cpkColor: {r: 0.7490196, g: 0, b: 0.7490196, a: 0}
+  - symbol: Ca
+    type: 0
+    cpkColor: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 0}
+  - symbol: Cu
+    type: 0
+    cpkColor: {r: 0.78431374, g: 0.5019608, b: 0.2, a: 0}
+  - symbol: P
+    type: 1
+    cpkColor: {r: 1, g: 0.64705884, b: 0, a: 0}
+  - symbol: Fe
+    type: 0
+    cpkColor: {r: 1, g: 0.5019608, b: 0, a: 0}
+  - symbol: Ru
+    type: 0
+    cpkColor: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 0}
+  - symbol: B
+    type: 0
+    cpkColor: {r: 0, g: 1, b: 0, a: 0}
+  - symbol: C
+    type: 1
+    cpkColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0}

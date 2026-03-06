@@ -14,13 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stepId: Movement_01
   speakerName: Dalton
-  portrait: {fileID: 1070078605, guid: 34922c41b6f9812498ee2e7236d44369, type: 3}
+  portrait: {fileID: -952943033, guid: 34922c41b6f9812498ee2e7236d44369, type: 3}
   autoCloseByTime: 0
   autoCloseSeconds: 6
   delayBeforeShow: 0
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: Primero debes poder moverte con W/A/S/D con las flechas del teclado.
-  hint: Muevete con WSAD para continuar
-  advanceMode: 1
-  requiredFlag: Moved
+  text: "Mu\xE9vete con WASD (o flechas).\nEsto es un plataformero: vas a explorar
+    para recuperar el control del equilibrio."
+  hint: Enter - Continuar | Espacio - Saltar texto
+  advanceMode: 0
+  requiredFlag: 

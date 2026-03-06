@@ -15,6 +15,9 @@ public class InteractionSensor : MonoBehaviour
     [Header("Referencias")]
     [SerializeField] private Transform cameraPivot; // referencia de cámara (isométrica)
     [SerializeField] private TMP_Text promptText;
+    [SerializeField] TutorialManager tutorial;
+    bool _firedSeen = false;
+    public bool _isTutorial = true;
 
     [Header("HUD Prompt")]
     [SerializeField] private GameObject panelPrompt;
@@ -31,6 +34,7 @@ public class InteractionSensor : MonoBehaviour
 
     void Awake()
     {
+        _firedSeen = false;
         _inputs = GetComponentInParent<StarterAssetsInputs>();
         if (_inputs == null)
             Debug.LogWarning("InteractionSensor: no encontró StarterAssetsInputs en el padre.");
@@ -169,8 +173,16 @@ public class InteractionSensor : MonoBehaviour
 
     void SetCurrent(IInteractable next)
     {
+        Debug.Log("Si entra a SetCurrentInteractibe" + _firedSeen);
+
+        if (!_firedSeen && _isTutorial == true){
+            Debug.Log("Si entra a Llavar el tutorial");
+
+            tutorial?.PlayEventOnce(TutorialEvent.FirstInteractableSeen);
+        }
         if (_current != null) _current.SetFocused(false);
         _current = next;
         if (_current != null) _current.SetFocused(true);
+
     }
 }

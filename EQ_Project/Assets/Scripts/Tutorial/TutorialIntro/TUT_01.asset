@@ -20,9 +20,7 @@ MonoBehaviour:
   delayBeforeShow: 0
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: "Auch\u2026\nOk. Nota mental: no volver a tocar esa palanca roja.\nCreo que
-    intent\xE9 \u201Cmejorar\u201D la balanza\u2026\ny termin\xE9 encogiendo el laboratorio.\nO
-    agrand\xE1ndolo.\nO ambas."
+  text: "Auch\u2026\nOk. Nota mental: no volver a tocar palancas rojas."
   hint: Enter - Continuar | Espacio - Saltar texto
   advanceMode: 0
   requiredFlag: 

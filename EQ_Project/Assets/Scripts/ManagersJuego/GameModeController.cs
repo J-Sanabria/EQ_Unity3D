@@ -35,6 +35,9 @@ namespace CB.Core
         [SerializeField] string explorationMap = "Player";
         [SerializeField] string balanceMap = "Balance";
 
+        [Header("Tutorial")]
+        [SerializeField] TutorialManager tutorial;
+
         public event System.Action<GameState> OnStateChanged;
         public GameState State { get; private set; } = GameState.Exploration;
         public BalanceStation CurrentStation { get; private set; }
@@ -49,15 +52,15 @@ namespace CB.Core
             UnhookStationInput(CurrentStation);
         }
 
-        public void EnterExploration()
+        public void EnterExploration(bool force = false)
         {
-            if (State == GameState.Exploration) return;
+            if (!force && State == GameState.Exploration) return;
 
             UnhookStationInput(CurrentStation);
             CurrentStation = null;
 
             State = GameState.Exploration;
-            ApplyState(forceActionMap: false);
+            ApplyState(forceActionMap: force); // <- si force, cambia actionmap sí o sí
             OnStateChanged?.Invoke(State);
         }
 
@@ -90,6 +93,9 @@ namespace CB.Core
 
             ApplyState(forceActionMap: false);
             OnStateChanged?.Invoke(State);
+
+            if (tutorial != null)
+                tutorial?.PlayEventOnce(TutorialEvent.EnterBalance);
         }
 
         public void ExitBalance()
@@ -185,6 +191,8 @@ namespace CB.Core
                 else
                 {
                     session.RegisterError();
+                    if (tutorial != null)
+                        tutorial?.PlayEventOnce(TutorialEvent.MinimalBalance);
                     Debug.Log("[Balance] Balanceada pero NO mínima (simplifica coeficientes).");
                 }
             }

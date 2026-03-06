@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
     public string CurrentUser { get; private set; }
     public int CurrentScore { get; private set; }
 
+    public bool WillAutoStartLevel() => _shouldAutoStartLevel;
+
     // Flag: solo auto-start si venimos de “StartGame”
     bool _shouldAutoStartLevel;
 
@@ -98,6 +100,21 @@ public class GameManager : MonoBehaviour
     {
         if (amount <= 0) return;
         CurrentScore += amount;
+    }
+
+    public void AdvanceToLevel(string sceneName, LevelConfig nextLevelConfig)
+    {
+        if (nextLevelConfig == null || nextLevelConfig.reactionPool == null)
+        {
+            Debug.LogError("[GameManager] AdvanceToLevel: LevelConfig inválido.");
+            return;
+        }
+
+        // Mantiene CurrentUser y CurrentScore
+        initialLevel = nextLevelConfig;
+
+        _shouldAutoStartLevel = true;
+        SceneManager.LoadScene(sceneName);
     }
 
     public void FinishGame()

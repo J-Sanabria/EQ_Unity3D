@@ -12,6 +12,14 @@ namespace CB.Balance
         public int score;
     }
 
+    public enum AdjustBlockReason
+    {
+        None,
+        NoKeys,
+        PhaseLocked,
+        WrongPhaseOrder
+    }
+
     public class BalanceSessionController : MonoBehaviour
     {
         [Header("Estado (coeficientes actuales)")]
@@ -35,12 +43,9 @@ namespace CB.Balance
         string _boundReactionId;
         public BalanceStation Station { get; private set; }
 
-        /// <summary>
-        /// Hook opcional para restringir ajustes desde otro sistema (fases/llaves/dificultad).
-        /// Firma: (side, index, delta) => permitido?
-        /// side: 0=izq, 1=der
-        /// </summary>
-        public Func<int, int, int, bool> CanAdjust;
+        public event Action<int, int, int, int> OnAdjustedApplied;
+        public Func<int, int, int, AdjustBlockReason> CanAdjustReason;
+        public event Action<AdjustBlockReason> OnAdjustBlocked;
 
         public event Action<BalanceResult> OnSessionCompleted;
         public event Action OnEquationChanged;
@@ -122,29 +127,30 @@ namespace CB.Balance
         // -------------------------
         public void Adjust(int side, int index, int delta)
         {
-            if (!running || Station == null || Station.reaction == null)
-                return;
-
+            if (!running || Station == null || Station.reaction == null) return;
             if (delta == 0) return;
             if (side != 0 && side != 1) return;
 
-            // Hook de permisos (fases/llaves/dificultad)
-            if (CanAdjust != null && !CanAdjust(side, index, delta))
+            if (CanAdjustReason != null)
             {
-                Debug.Log($"[Session] Adjust BLOQUEADO side={side} idx={index} delta={delta}");
-                return;
+                var reason = CanAdjustReason(side, index, delta);
+                if (reason != AdjustBlockReason.None)
+                {
+                    OnAdjustBlocked?.Invoke(reason);
+                    return;
+                }
             }
+
             var coefs = side == 0 ? coefL : coefR;
-            if (coefs == null || index < 0 || index >= coefs.Length)
-                return;
+            if (coefs == null || index < 0 || index >= coefs.Length) return;
 
             int before = coefs[index];
             int after = Mathf.Clamp(before + delta, minCoef, maxCoef);
-
             if (after == before) return;
 
             coefs[index] = after;
             OnEquationChanged?.Invoke();
+            OnAdjustedApplied?.Invoke(side, index, before, after);
         }
 
         // -------------------------
@@ -227,6 +233,31 @@ namespace CB.Balance
         public void Stop()
         {
             running = false;
+        }
+
+        // Reset
+
+        public void ResetCoefsToOnes()
+        {
+            if (Station == null || Station.reaction == null)
+                return;
+
+            int l = Station.reaction.lhs.Length;
+            int r = Station.reaction.rhs.Length;
+
+            if (coefL == null || coefL.Length != l) coefL = new int[l];
+            if (coefR == null || coefR.Length != r) coefR = new int[r];
+
+            for (int i = 0; i < l; i++) coefL[i] = minCoef; // minCoef = 1
+            for (int i = 0; i < r; i++) coefR[i] = minCoef;
+
+            ResetMetrics();
+            running = true;
+
+            // IMPORTANT: marca como “misma reacción” para que al re-entrar no vuelva a clonar defaults raros
+            _boundReactionId = Station.reaction.reactionId;
+
+            OnEquationChanged?.Invoke();
         }
     }
 }

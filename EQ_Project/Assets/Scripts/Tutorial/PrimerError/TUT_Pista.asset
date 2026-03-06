@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e42884b0d50479b43955772fdf15b638, type: 3}
+  m_Name: TUT_Pista
+  m_EditorClassIdentifier: 
+  stepId: intro_01
+  speakerName: Dalton
+  portrait: {fileID: 0}
+  autoCloseByTime: 0
+  autoCloseSeconds: 6
+  delayBeforeShow: 0
+  delayUsesUnscaledTime: 1
+  pauseWhileShowing: 1
+  text: "Pista: el agua (H\u2082O) tiene 1 ox\xEDgeno.\nSi pones un coeficiente par
+    en H\u2082O, ser\xE1 m\xE1s f\xE1cil empatar con O\u2082.\nAjusta, revisa\u2026
+    y vuelve a Verificar."
+  hint: Enter - Continuar | Espacio - Saltar texto
+  advanceMode: 0
+  requiredFlag: 

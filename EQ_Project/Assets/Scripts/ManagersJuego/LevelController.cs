@@ -19,16 +19,61 @@ public class LevelController : MonoBehaviour
     [SerializeField] private Transform spawnPoint;
     [SerializeField] private PlayerRespawner playerRespawner;
     [SerializeField] PhaseGateController gateController;
+    [SerializeField] ActionMapSwitcher mapSwitcher; // asigna en inspector
+    [SerializeField] GameObject nextLevelDoor;
+
+    [Header("Next Level")]
+    [SerializeField] string easySceneName = "Easy";     // nombre de la escena del nivel fácil
+    [SerializeField] LevelConfig easyLevelConfig;       // LevelConfig del nivel fácil
+    [SerializeField] bool autoAdvanceToEasy = true;     // por si luego quieres volver a puerta
 
     private LevelPhase phase = LevelPhase.Exploration;
 
     private List<ReactionAsset> selectedReactions = new();
     private int currentIndex = -1;
+    int[] scoreByReaction; // mismo tamaño que selectedReactions
+
+
 
     // métricas acumuladas
     private float totalTime;
     private int totalErrors;
     private int totalScore;
+
+#if UNITY_EDITOR
+    [Header("Editor Only - Auto Start (para probar sin menú)")]
+    [SerializeField] bool editorAutoStart = true;
+    [SerializeField] string editorUser = "TestUser";
+#endif
+
+    void Start()
+    {
+
+#if UNITY_EDITOR
+        if (!editorAutoStart) return;
+
+        // Si GameManager ya pidió iniciar (venimos del menú), NO hagas nada.
+        if (GameManager.Instance != null && GameManager.Instance.WillAutoStartLevel())
+            return;
+
+        // Si no hay config asignada en el inspector, no puede arrancar.
+        if (levelConfig == null)
+        {
+            Debug.LogWarning("[LevelController] EditorAutoStart: falta LevelConfig asignado en el inspector.");
+            return;
+        }
+
+        // Asegura un usuario para que Score/DB no fallen (sin pasar por menú).
+        if (UserDB.Instance != null)
+        {
+            if (string.IsNullOrEmpty(UserDB.Instance.GetCurrentUser()))
+                UserDB.Instance.SetCurrentUser(editorUser);
+        }
+
+        // Arranca el nivel usando el LevelConfig del inspector
+        StartLevel(levelConfig);
+#endif
+    }
 
     void Awake()
     {
@@ -48,6 +93,14 @@ public class LevelController : MonoBehaviour
             gameMode.OnStateChanged += HandleGameModeState;
     }
 
+    void EnsureScoreArray()
+    {
+        if (selectedReactions == null) return;
+
+        scoreByReaction = new int[selectedReactions.Count];
+        for (int i = 0; i < scoreByReaction.Length; i++)
+            scoreByReaction[i] = -1;
+    }
     void OnDisable()
     {
         if (balanceStation != null && balanceStation.session != null)
@@ -101,6 +154,7 @@ public class LevelController : MonoBehaviour
             return;
         }
 
+        EnsureScoreArray(); 
 
         currentIndex = 0;
         totalTime = 0f;
@@ -112,9 +166,51 @@ public class LevelController : MonoBehaviour
 
     public void RestartCurrentReaction()
     {
-        // Resetea la reacción actual sin cambiar currentIndex
-        // Esto fuerza: llaves, sesión, fases, respawn, exploración.
-        LoadReaction();
+        if (balanceStation == null || balanceStation.reaction == null) return;
+
+        // 1) reset llaves
+        if (playerKeyRing != null) playerKeyRing.ClearKeys();
+
+        // 2) reset coeficientes a 1 (HARD RESET)
+        if (balanceStation.session != null)
+        {
+            balanceStation.session.BindStation(balanceStation); // asegura Station asignada
+            balanceStation.session.ResetCoefsToOnes();
+        }
+
+        // 3) refresca HUD ecuación (usa coefL/coefR actuales)
+        if (equationHUD != null)
+            equationHUD.SetReaction(balanceStation.reaction);
+
+        // 4) reconfig fases/llaves/puertas
+        if (phaseManager != null)
+            phaseManager.ConfigureForReaction(balanceStation, levelConfig.difficulty);
+
+        if (keyActivator != null)
+            keyActivator.SetActiveKeys(phaseManager.GetPresentPhases());
+
+        if (gateController != null)
+            gateController.Configure(phaseManager.GetPresentPhases(), levelConfig.difficulty);
+
+        // 5) respawn
+        if (playerRespawner != null && spawnPoint != null)
+            playerRespawner.RespawnAt(spawnPoint);
+
+        // 6) vuelve a exploración
+        phase = LevelPhase.Exploration;
+        gameMode.EnterExploration();
+
+        // si ya la habías completado antes, quita ese score acumulado
+        if (scoreByReaction != null && currentIndex >= 0 && currentIndex < scoreByReaction.Length)
+        {
+            int old = scoreByReaction[currentIndex];
+            if (old >= 0)
+            {
+                totalScore -= old;
+                scoreByReaction[currentIndex] = -1;
+            }
+        }
+
     }
 
     // -------------------------
@@ -208,23 +304,32 @@ public class LevelController : MonoBehaviour
     }
     private void HandleSessionCompleted(BalanceResult result)
     {
-        if (phase != LevelPhase.Balance)
+        if (scoreByReaction == null || currentIndex < 0 || currentIndex >= scoreByReaction.Length)
+        {
+            Debug.LogError($"[LevelController] scoreByReaction no coincide. idx={currentIndex} len={(scoreByReaction == null ? -1 : scoreByReaction.Length)}");
             return;
+        }
+
+        if (phase != LevelPhase.Balance) return;
 
         phase = LevelPhase.ReactionCompleted;
 
         totalTime += result.timeSeconds;
         totalErrors += result.errors;
+
+        // reemplaza score si ya existía para este índice
+        int old = scoreByReaction[currentIndex];
+        if (old >= 0) totalScore -= old;          // quita el anterior
+        scoreByReaction[currentIndex] = result.score;
         totalScore += result.score;
 
-        // salir de balance
         gameMode.ExitBalance();
 
-        // pausar y mostrar cursor
         Time.timeScale = 0f;
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
+        mapSwitcher?.PushUI();
         resultPanel.Show(result, ResultContext.ReactionCompleted);
     }
 
@@ -233,20 +338,37 @@ public class LevelController : MonoBehaviour
     // -------------------------
     public void Continue()
     {
-        if (phase != LevelPhase.ReactionCompleted)
+        if (phase == LevelPhase.ReactionCompleted)
+        {
+            ExitResultsMode();
+            currentIndex++;
+
+            if (currentIndex < selectedReactions.Count) LoadReaction();
+            else CompleteLevel();
+
             return;
-
-        ExitResultsMode();
-
-        currentIndex++;
-
-        if (currentIndex < selectedReactions.Count)
-        {
-            LoadReaction();
         }
-        else
+
+        if (phase == LevelPhase.LevelCompleted)
         {
-            CompleteLevel();
+            ExitResultsMode();
+
+            if (autoAdvanceToEasy)
+            {
+                if (GameManager.Instance == null)
+                {
+                    Debug.LogError("[LevelController] No existe GameManager para avanzar de nivel.");
+                    return;
+                }
+
+                GameManager.Instance.AdvanceToLevel(easySceneName, easyLevelConfig);
+            }
+            else
+            {
+                ActivateNextLevelDoor();
+            }
+
+            return;
         }
     }
 
@@ -257,9 +379,8 @@ public class LevelController : MonoBehaviour
 
         ExitResultsMode();
 
-        // reinicia la sesión de la misma reacción
-        // IMPORTANTE: no basta con LoadReaction si tu player tiene llaves / está en balanza
-        LoadReaction();
+        // HARD RESET REAL (coeficientes a 1 + llaves + respawn)
+        RestartCurrentReaction();
     }
 
     // -------------------------
@@ -267,6 +388,8 @@ public class LevelController : MonoBehaviour
     // -------------------------
     private void CompleteLevel()
     {
+
+
         phase = LevelPhase.LevelCompleted;
 
         var summary = new BalanceResult
@@ -274,22 +397,35 @@ public class LevelController : MonoBehaviour
             timeSeconds = totalTime,
             errors = totalErrors,
             score = totalScore,
-            reactionId = "" // opcional: o "LEVEL_SUMMARY"
+            reactionId = ""
         };
 
         GameManager.Instance?.AddScore(totalScore);
+
+        // ENTRAR A UI/RESULTS MODE
+        Time.timeScale = 0f;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        // Si tienes EnterResults que congela jugador/hud
+        gameMode?.EnterResults();
+        mapSwitcher?.PushUI();
         resultPanel.Show(summary, ResultContext.LevelCompleted);
+    }
+
+    void ActivateNextLevelDoor()
+    {
+        if (nextLevelDoor != null)
+            nextLevelDoor.SetActive(true);
     }
 
     void ExitResultsMode()
     {
-        // 1) reanuda tiempo
         Time.timeScale = 1f;
-
-        // 2) oculta panel
         if (resultPanel != null) resultPanel.Hide();
 
-        // 3) vuelve a exploración (reactiva movimiento/inputs)
-        if (gameMode != null) gameMode.EnterExploration();
+        mapSwitcher?.Pop();
+
+        if (gameMode != null) gameMode.EnterExploration(force: true); // <- clave
     }
 }

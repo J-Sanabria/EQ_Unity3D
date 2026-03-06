@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d470c12d5a42b1a4c81330cf45ce95f2, type: 3}
+  m_Name: MedioPool_Reaction
+  m_EditorClassIdentifier: 
+  difficulty: 2
+  reactions:
+  - {fileID: 11400000, guid: a125221fa4731e24e9e57fa2387ee555, type: 2}
+  - {fileID: 11400000, guid: 71e25ec2de40bb14db51b3410fe810df, type: 2}
+  - {fileID: 11400000, guid: 27bb9ff817fdd4942b3bc6a6e6d49773, type: 2}
+  - {fileID: 11400000, guid: f240c4dbd1202d645b2965f564d5c3be, type: 2}
+  - {fileID: 11400000, guid: 17b77122ecc6f2e40b71f689d623d5c0, type: 2}

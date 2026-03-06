@@ -8,7 +8,27 @@ public class ScheduledBlock
 {
     public TutorialBlockAsset block;
     [Min(0f)] public float delaySeconds = 0f;
-    public bool useUnscaledTime = true; // recomendado si en intro pausas
+    public bool useUnscaledTime = true;
+}
+
+public enum TutorialEvent
+{
+    Intro,
+    Movement,
+    FirstInteractableSeen,
+    FirstInteract,
+    FirstKeyPicked,
+    EnterBalance,
+    MinimalBalance,
+    lockedPhase,
+    NoKeys
+}
+
+[System.Serializable]
+public class TutorialEventBlock
+{
+    public TutorialEvent ev;
+    public TutorialBlockAsset block;
 }
 
 public class TutorialManager : MonoBehaviour
@@ -16,30 +36,78 @@ public class TutorialManager : MonoBehaviour
     [Header("Refs")]
     [SerializeField] TutorialUI ui;
 
-    [Header("Blocks")]
-    [SerializeField] TutorialBlockAsset introBlock;
-    [SerializeField] TutorialBlockAsset movementBlock;
-    [SerializeField] TutorialBlockAsset keyPickedBlock;
-    [SerializeField] TutorialBlockAsset enterBalanceBlock;
+    [Header("Start Sequence (Tutorial only)")]
     [SerializeField] List<ScheduledBlock> startSequence = new();
+
+    [Header("Event Blocks")]
+    [SerializeField] List<TutorialEventBlock> eventBlocks = new();
 
     [Header("Behavior")]
     [SerializeField] bool pauseGameWhileDialogue = true;
-    [SerializeField] bool allowQueue = false; // si false, no permite disparar bloque si ya hay uno activo
+    [SerializeField] bool allowQueue = false;
+
+    [Header("Input Lock (IMPORTANT)")]
+    [SerializeField] PlayerInput playerInput;                 // el PlayerInput del jugador
+    [SerializeField] string gameplayMapName = "Player";        // tu mapa real
+    [SerializeField] string balanceMapName = "Balance";        // tu mapa balance
+    [SerializeField] string tutorialMapName = "UI";            // opcional (si existe)
+    [SerializeField] bool useTutorialMap = false;
+    [SerializeField] ActionMapSwitcher mapSwitcher;
+
+
+    public bool IsDialogueActive => _running; // o ui.IsOpen si prefieres
+    public bool IsBlockingGameplayNow => _running && _current != null && _current.pauseWhileShowing;
+
+    string _prevActionMapName;
+    bool _inputLockedByTutorial;
 
     readonly HashSet<string> _playedBlocks = new();
-    Queue<TutorialStepAsset> _queue = new();
+    readonly Dictionary<TutorialEvent, TutorialBlockAsset> _eventMap = new();
+
+    readonly Queue<TutorialStepAsset> _queue = new();
 
     TutorialStepAsset _current;
     bool _running;
     Coroutine _autoCloseRoutine;
 
-    // flags opcionales
-    readonly HashSet<string> _flags = new();
+    void Awake()
+    {
+        // build map
+        _eventMap.Clear();
+        for (int i = 0; i < eventBlocks.Count; i++)
+        {
+            var eb = eventBlocks[i];
+            if (eb == null || eb.block == null) continue;
+            _eventMap[eb.ev] = eb.block;
+        }
+    }
+
+    // ---------- Helper: Lock/Unlock ----------
+    void LockGameplayInput()
+    {
+        if (_inputLockedByTutorial) return;
+        _inputLockedByTutorial = true;
+
+        mapSwitcher?.PushUI();
+    }
+
+    void UnlockGameplayInput()
+    {
+        if (!_inputLockedByTutorial) return;
+        _inputLockedByTutorial = false;
+
+        mapSwitcher?.Pop();
+    }
+    bool IsPausingStep(TutorialStepAsset step)
+    {
+        return step != null && step.pauseWhileShowing;
+    }
+
 
     void Start()
     {
-        StartCoroutine(RunStartSequence());
+        if (startSequence != null && startSequence.Count > 0)
+            StartCoroutine(RunStartSequence());
     }
 
     IEnumerator RunStartSequence()
@@ -58,21 +126,30 @@ public class TutorialManager : MonoBehaviour
                 yield return null;
             }
 
+            if (!allowQueue)
+                while (_running) yield return null;
+
             PlayBlockOnce(s.block);
         }
     }
 
+    // ---------- Public API ----------
+    public void PlayEventOnce(TutorialEvent ev)
+    {
+        if (_eventMap.TryGetValue(ev, out var block) && block != null)
+            PlayBlockOnce(block);
+    }
 
     public void PlayBlockOnce(TutorialBlockAsset block)
     {
         if (block == null) return;
-        if (_playedBlocks.Contains(block.blockId)) return;
+        if (string.IsNullOrEmpty(block.blockId)) return;
 
+        if (_playedBlocks.Contains(block.blockId)) return;
         if (_running && !allowQueue) return;
 
         _playedBlocks.Add(block.blockId);
 
-        // encola pasos
         for (int i = 0; i < block.steps.Count; i++)
             if (block.steps[i] != null) _queue.Enqueue(block.steps[i]);
 
@@ -80,22 +157,14 @@ public class TutorialManager : MonoBehaviour
             NextStep();
     }
 
-    public void SetFlag(string flag)
-    {
-        if (string.IsNullOrEmpty(flag)) return;
-        _flags.Add(flag);
-        TryAdvanceIfWaitingFlag();
-    }
-
+    // ---------- Input (dialogue) ----------
     void Update()
     {
         if (!_running || ui == null || !ui.IsOpen) return;
 
-        // Space = saltar typing
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
             ui.SkipTyping();
 
-        // Enter = continuar (solo si el paso lo permite)
         if (Keyboard.current.enterKey.wasPressedThisFrame)
         {
             if (ui.IsTyping) ui.SkipTyping();
@@ -120,31 +189,36 @@ public class TutorialManager : MonoBehaviour
         StartCoroutine(ShowStepWithDelay(_current));
     }
 
+    // ---------- en ShowStepWithDelay ----------
     IEnumerator ShowStepWithDelay(TutorialStepAsset step)
     {
         float d = Mathf.Max(0f, step.delayBeforeShow);
         float t = 0f;
 
-        // Durante este delay, el jugador puede actuar
         while (t < d)
         {
             t += step.delayUsesUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
             yield return null;
         }
 
-        if (step.pauseWhileShowing)
-            Time.timeScale = 0f;
+        // si este paso va a pausar, bloquea input ANTES de mostrar
+        if (IsPausingStep(step))
+        {
+            LockGameplayInput();
+            if (pauseGameWhileDialogue) Time.timeScale = 0f;
+        }
         else
-            Time.timeScale = 1f;
-
+        {
+            // si este paso NO pausa, asegúrate de no dejarlo bloqueado por error
+            UnlockGameplayInput();
+            if (pauseGameWhileDialogue) Time.timeScale = 1f;
+        }
 
         ui.Show(step.portrait, step.speakerName, step.text, step.hint);
 
-        // AutoClose si aplica
+        // AutoClose...
         if (step.autoCloseByTime && step.autoCloseSeconds > 0f)
             _autoCloseRoutine = StartCoroutine(AutoCloseAfter(step.autoCloseSeconds));
-
-        TryAdvanceIfWaitingFlag();
     }
 
     IEnumerator AutoCloseAfter(float seconds)
@@ -156,7 +230,6 @@ public class TutorialManager : MonoBehaviour
             yield return null;
         }
 
-        // si aún está abierto, avanza como si fuera continue
         TryContinue(force: true);
     }
 
@@ -167,32 +240,26 @@ public class TutorialManager : MonoBehaviour
         if (_current.advanceMode == TutorialAdvanceMode.PressContinue || force)
         {
             ui.Hide();
+
+            // reanuda tiempo si el paso pausaba
             if (pauseGameWhileDialogue) Time.timeScale = 1f;
-            NextStep();
-            return;
-        }
 
-        // WaitForFlag: Enter NO avanza (se queda esperando)
-    }
+            // desbloquea input
+            UnlockGameplayInput();
 
-    void TryAdvanceIfWaitingFlag()
-    {
-        if (_current == null) return;
-        if (_current.advanceMode != TutorialAdvanceMode.WaitForFlag) return;
-
-        if (!string.IsNullOrEmpty(_current.requiredFlag) && _flags.Contains(_current.requiredFlag))
-        {
-            ui.Hide();
-            if (pauseGameWhileDialogue) Time.timeScale = 1f;
             NextStep();
         }
     }
-
     void EndDialogue()
     {
         _running = false;
         _current = null;
         ui.Hide();
         if (pauseGameWhileDialogue) Time.timeScale = 1f;
+
+        // desbloquea al terminar TODO
+        UnlockGameplayInput();
     }
+
+
 }
