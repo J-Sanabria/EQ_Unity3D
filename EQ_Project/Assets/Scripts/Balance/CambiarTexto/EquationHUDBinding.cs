@@ -12,21 +12,18 @@ public class EquationHUDBinding : MonoBehaviour
     BalanceSelectionController selection;
     ReactionAsset reaction;
 
-    public void SetMode(bool isBalanceMode)
-{
-    _isBalanceMode = isBalanceMode;
-    Refresh();
-}
-bool _isBalanceMode;
+    bool _isBalanceMode;
 
-    void OnDisable()
+    public void SetMode(bool isBalanceMode)
     {
-        Unsubscribe();
+        _isBalanceMode = isBalanceMode;
+        Refresh();
     }
+
+    void OnDisable() => Unsubscribe();
 
     public void Bind(BalanceSessionController s, BalanceSelectionController sel)
     {
-        // Desuscribir de lo anterior
         Unsubscribe();
 
         session = s;
@@ -66,8 +63,7 @@ bool _isBalanceMode;
 
     void Refresh()
     {
-        if (reaction == null)
-            return;
+        if (reaction == null) return;
 
         int[] coefL = session != null ? session.coefL : reaction.coefL;
         int[] coefR = session != null ? session.coefR : reaction.coefR;
@@ -76,9 +72,10 @@ bool _isBalanceMode;
 
         if (session != null && _isBalanceMode)
         {
-            var bad = ReactionValidator.Imbalance(reaction.lhs, reaction.rhs, coefL, coefR);
+            var imbalance = ReactionValidator.Imbalance(reaction.lhs, reaction.rhs, coefL, coefR);
+
             badElements = new HashSet<string>();
-            foreach (var kv in bad)
+            foreach (var kv in imbalance)
                 if (kv.Value != 0)
                     badElements.Add(kv.Key);
         }

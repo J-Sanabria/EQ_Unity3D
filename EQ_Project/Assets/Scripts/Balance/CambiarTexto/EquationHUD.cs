@@ -12,8 +12,6 @@ public class EquationHUD : MonoBehaviour
     [Header("Colores")]
     [SerializeField] string badHex = "#FF5555";
 
-    ReactionAsset current;
-
     public void SetEquation(
         string[] lhs,
         string[] rhs,
@@ -23,13 +21,12 @@ public class EquationHUD : MonoBehaviour
         int selectedIndex = -1,
         HashSet<string> badElements = null)
     {
-        if (text == null || lhs == null || rhs == null)
-            return;
+        if (text == null || lhs == null || rhs == null) return;
 
         var sb = new StringBuilder(128);
 
         BuildSide(sb, lhs, coefL, selectedSide == 0 ? selectedIndex : -1, badElements);
-        sb.Append("  \u2192  ");
+        sb.Append(" <size=140%><b> \u2192 </b></size> ");
         BuildSide(sb, rhs, coefR, selectedSide == 1 ? selectedIndex : -1, badElements);
 
         text.richText = true;
@@ -38,8 +35,7 @@ public class EquationHUD : MonoBehaviour
 
     public void Clear()
     {
-        if (text != null)
-            text.text = string.Empty;
+        if (text != null) text.text = string.Empty;
     }
 
     void BuildSide(
@@ -54,54 +50,30 @@ public class EquationHUD : MonoBehaviour
             if (i > 0) sb.Append(" + ");
 
             int coef = (coefs != null && i < coefs.Length) ? Mathf.Max(1, coefs[i]) : 1;
-            string formula = ChemTextUtil.ToTMPFormula(species[i]);
 
-            bool isBad = IsSpeciesBad(species[i], badElements);
+            // ahora se colorea POR ELEMENTO dentro de la fórmula
+            string formula = ChemTextUtil.ToTMPFormulaColored(species[i], badElements, badHex);
 
             if (highlightIndex == i)
             {
                 sb.Append("<mark=#00000055>");
-                AppendSpecies(sb, coef, formula, isBad, bold: true);
+                AppendSpecies(sb, coef, formula, bold: true);
                 sb.Append("</mark>");
             }
             else
             {
-                AppendSpecies(sb, coef, formula, isBad, bold: false);
+                AppendSpecies(sb, coef, formula, bold: false);
             }
         }
     }
 
-    void AppendSpecies(
-        StringBuilder sb,
-        int coef,
-        string formula,
-        bool isBad,
-        bool bold)
+    void AppendSpecies(StringBuilder sb, int coef, string formula, bool bold)
     {
         if (coef != 1)
             sb.Append(bold ? "<b>" + coef + "</b> " : coef + " ");
 
-        if (isBad)
-            sb.Append("<color=").Append(badHex).Append('>');
-
         if (bold) sb.Append("<b>");
         sb.Append(formula);
         if (bold) sb.Append("</b>");
-
-        if (isBad)
-            sb.Append("</color>");
-    }
-
-    bool IsSpeciesBad(string species, HashSet<string> badElements)
-    {
-        if (badElements == null || badElements.Count == 0)
-            return false;
-
-        var parsed = ChemFormula.Parse(species);
-        foreach (var elem in parsed.Keys)
-            if (badElements.Contains(elem))
-                return true;
-
-        return false;
     }
 }

@@ -6,7 +6,7 @@ public class MonitorInteractable : MonoBehaviour, IInteractable
     [SerializeField] private LevelController level;
     [SerializeField] private BalanceStation station;
 
-    public string Prompt => "Interactuar - Iniciar balanceo";
+    public string Prompt => "E o Enter - Iniciar balanceo";
 
     void Reset()
     {

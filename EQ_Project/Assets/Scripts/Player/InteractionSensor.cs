@@ -173,11 +173,7 @@ public class InteractionSensor : MonoBehaviour
 
     void SetCurrent(IInteractable next)
     {
-        Debug.Log("Si entra a SetCurrentInteractibe" + _firedSeen);
-
         if (!_firedSeen && _isTutorial == true){
-            Debug.Log("Si entra a Llavar el tutorial");
-
             tutorial?.PlayEventOnce(TutorialEvent.FirstInteractableSeen);
         }
         if (_current != null) _current.SetFocused(false);
