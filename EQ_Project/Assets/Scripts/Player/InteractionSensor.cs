@@ -70,18 +70,19 @@ public class InteractionSensor : MonoBehaviour
     {
         if (((1 << other.gameObject.layer) & interactableMask.value) == 0) return;
 
-        if (other.TryGetComponent<IInteractable>(out var ia))
-        {
-            if (!_nearby.Contains(ia))
-                _nearby.Add(ia);
-        }
+        var ia = other.GetComponentInParent<IInteractable>();
+        if (ia != null && !_nearby.Contains(ia))
+            _nearby.Add(ia);
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (!other.TryGetComponent<IInteractable>(out var ia)) return;
+        var ia = other.GetComponentInParent<IInteractable>();
+        if (ia == null) return;
 
-        if (_current == ia) SetCurrent(null);
+        if (_current == ia)
+            SetCurrent(null);
+
         _nearby.Remove(ia);
     }
 
@@ -173,12 +174,20 @@ public class InteractionSensor : MonoBehaviour
 
     void SetCurrent(IInteractable next)
     {
-        if (!_firedSeen && _isTutorial == true){
-            tutorial?.PlayEventOnce(TutorialEvent.FirstInteractableSeen);
-        }
-        if (_current != null) _current.SetFocused(false);
-        _current = next;
-        if (_current != null) _current.SetFocused(true);
+        if (_current != null)
+            _current.SetFocused(false);
 
+        _current = next;
+
+        if (_current != null)
+        {
+            _current.SetFocused(true);
+
+            if (!_firedSeen && _isTutorial)
+            {
+                _firedSeen = true;
+                tutorial?.PlayEventOnce(TutorialEvent.FirstInteractableSeen);
+            }
+        }
     }
 }

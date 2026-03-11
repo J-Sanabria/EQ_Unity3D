@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e42884b0d50479b43955772fdf15b638, type: 3}
+  m_Name: TUT_Llaves05
+  m_EditorClassIdentifier: 
+  stepId: intro_01
+  speakerName: Dalton
+  portrait: {fileID: -322326990, guid: 0a184a8585c7c91459c30db870e04aff, type: 3}
+  autoCloseByTime: 0
+  autoCloseSeconds: 6
+  delayBeforeShow: 0
+  delayUsesUnscaledTime: 1
+  pauseWhileShowing: 1
+  text: "As\xED que el plan es sencillo: primero exploras este gigantesco mundo at\xF3mico
+    y encuentras las llaves; cuando las obtienes, desbloqueas los elementos de la
+    ecuaci\xF3n, y entonces s\xED podemos empezar a balancear\u2026"
+  hint: Enter - Continuar | Espacio - Saltar texto
+  advanceMode: 0
+  requiredFlag: 

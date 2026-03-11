@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using CB.Balance;
 
 public class PhaseKeyActivator : MonoBehaviour
 {
@@ -13,20 +12,29 @@ public class PhaseKeyActivator : MonoBehaviour
     }
 
     [SerializeField] private List<KeyRef> keys = new();
+    [SerializeField] private MinimapController minimapController;
 
     public void SetActiveKeys(HashSet<PhaseKey> activeKeys)
     {
         for (int i = 0; i < keys.Count; i++)
         {
-            var c = keys[i].collectible;
-            if (c == null) continue;
+            KeyRef keyRef = keys[i];
+            bool shouldBeActive = activeKeys.Contains(keyRef.key);
 
-            bool shouldBeActive = activeKeys.Contains(keys[i].key);
+            GameObject targetObject = keyRef.keyObject != null
+                ? keyRef.keyObject
+                : (keyRef.collectible != null ? keyRef.collectible.gameObject : null);
 
-            if (shouldBeActive)
-                c.ResetKey();
-            else
-                c.gameObject.SetActive(false);
+            if (targetObject == null)
+                continue;
+
+            targetObject.SetActive(shouldBeActive);
+
+            if (shouldBeActive && keyRef.collectible != null)
+                keyRef.collectible.ResetKey();
         }
+
+        if (minimapController != null)
+            minimapController.RebuildTargets();
     }
 }

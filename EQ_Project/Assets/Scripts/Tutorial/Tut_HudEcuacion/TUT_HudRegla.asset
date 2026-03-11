@@ -14,15 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stepId: intro_01
   speakerName: Dalton
-  portrait: {fileID: -952943033, guid: 34922c41b6f9812498ee2e7236d44369, type: 3}
+  portrait: {fileID: 1739925612, guid: 30e39355f57c76f49a89497cafce8457, type: 3}
   autoCloseByTime: 0
   autoCloseSeconds: 6
   delayBeforeShow: 0
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: "Regla de oro: la materia no se crea ni se destruye.As\xED que la cantidad
-    de \xE1tomos debe ser igual en ambos lados. Si no coincide\u2026 el equilibrio
-    se rompe. Y cuando se rompe\u2026 bueno. M\xEDranos."
+  text: "Regla de oro: la materia no se crea ni se destruye. As\xED que la cantidad
+    de \xE1tomos debe ser igual en ambos lados. Si no coincide el equilibrio se rompe.
+    Y cuando se rompe\u2026 bueno. M\xEDranos."
   hint: Enter - Continuar | Espacio - Saltar texto
   advanceMode: 0
   requiredFlag: 

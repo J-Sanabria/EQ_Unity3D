@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stepId: intro_02
   speakerName: Dalton
-  portrait: {fileID: -952943033, guid: 34922c41b6f9812498ee2e7236d44369, type: 3}
+  portrait: {fileID: 1525760255, guid: 958fe457642c46a4581e1b3baada883b, type: 3}
   autoCloseByTime: 0
   autoCloseSeconds: 6
   delayBeforeShow: 0
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
   text: "Creo que intent\xE9 \u201Cmejorar\u201D la balanza\u2026 y termin\xE9 deformando
-    el laboratorio.\nPero tranquilo: se puede arreglar."
+    el laboratorio.\r\nPero tranquilo: se puede arreglar."
   hint: Enter - Continuar | Espacio - Saltar texto
   advanceMode: 0
   requiredFlag: 

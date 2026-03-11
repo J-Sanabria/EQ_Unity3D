@@ -139,11 +139,9 @@ public class PauseController : MonoBehaviour
 
     public void UI_ExitToMainMenu()
     {
-        // Cierra pausa y deja el juego “normal”
-        if (_paused) Resume();
+        GameManager.Instance?.SaveProgressSoFar();
         Time.timeScale = 1f;
-
-        SceneManager.LoadScene("MenuInicio");
+       SceneManager.LoadScene("MenuInicio");
     }
 
 

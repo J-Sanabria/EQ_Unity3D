@@ -19,6 +19,6 @@ MonoBehaviour:
   - O2
   rhs:
   - NO
-  - H20
+  - H2O
   coefL: 0100000001000000
   coefR: 0100000001000000

@@ -9,6 +9,8 @@ public class GameManager : MonoBehaviour
     [Header("Default Level")]
     [SerializeField] LevelConfig initialLevel;
 
+    bool _progressSavedThisRun;
+
     public string CurrentUser { get; private set; }
     public int CurrentScore { get; private set; }
 
@@ -19,6 +21,7 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
+
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
@@ -57,7 +60,9 @@ public class GameManager : MonoBehaviour
         }
 
         initialLevel = levelConfig;
+
         CurrentScore = 0;
+        _progressSavedThisRun = false; // importante: reinicia guardado para esta run
 
         _shouldAutoStartLevel = true;
         SceneManager.LoadScene(sceneName);
@@ -69,6 +74,18 @@ public class GameManager : MonoBehaviour
 
         // Intenta arrancar solo si existe LevelController
         StartCoroutine(StartLevelWhenReady());
+    }
+
+    public void SaveProgressSoFar()
+    {
+        if (_progressSavedThisRun) return; // evita guardar duplicado si el usuario spamea salir
+        _progressSavedThisRun = true;
+
+        if (string.IsNullOrEmpty(CurrentUser) || UserDB.Instance == null) return;
+
+        // Guarda el score acumulado hasta ahora
+        UserDB.Instance.RecordScore(CurrentUser, CurrentScore);
+        Debug.Log($"[GameManager] Progreso guardado: {CurrentUser} -> {CurrentScore}");
     }
 
     IEnumerator StartLevelWhenReady()

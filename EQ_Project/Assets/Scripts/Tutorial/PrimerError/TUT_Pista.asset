@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stepId: intro_01
   speakerName: Dalton
-  portrait: {fileID: 0}
+  portrait: {fileID: -322326990, guid: 0a184a8585c7c91459c30db870e04aff, type: 3}
   autoCloseByTime: 0
   autoCloseSeconds: 6
   delayBeforeShow: 0

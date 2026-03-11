@@ -20,8 +20,8 @@ MonoBehaviour:
   delayBeforeShow: 1
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: "Si necesitas saltar, usa Espacio.\nS\xED\u2026 ahora adem\xE1s de qu\xEDmico,
-    soy personaje jugable."
+  text: "Si necesitas saltar, usa Espacio.\r\nS\xED\u2026 ahora adem\xE1s de qu\xEDmico,
+    soy personaje jugable "
   hint: Enter - Continuar | Espacio - Saltar texto
   advanceMode: 0
   requiredFlag: 

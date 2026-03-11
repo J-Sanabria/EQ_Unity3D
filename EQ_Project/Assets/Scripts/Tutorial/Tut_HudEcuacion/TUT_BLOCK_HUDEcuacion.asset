@@ -15,6 +15,13 @@ MonoBehaviour:
   blockId: HudEcuacion
   steps:
   - {fileID: 11400000, guid: ccb1075e93094964f9150fdb43cb9035, type: 2}
+  - {fileID: 11400000, guid: 416793fb8102d0a45b23db39160c44ab, type: 2}
+  - {fileID: 11400000, guid: 5ad1e493ec6e2484caddbac7ece3ddb1, type: 2}
   - {fileID: 11400000, guid: dce7cb2068720d84485d5f52bb11390e, type: 2}
   - {fileID: 11400000, guid: 4f10eb098b28c3843ae5969be3b78da8, type: 2}
-  - {fileID: 11400000, guid: d4fceb0dfe5586e4d96df48dd3237068, type: 2}
+  - {fileID: 11400000, guid: 01abf7094323e8142b1d959d84b7a3b9, type: 2}
+  - {fileID: 11400000, guid: 096488e57d5a19540b66927e41c6d1e3, type: 2}
+  - {fileID: 11400000, guid: 30c4d0ab8ea4d16498267daa8d3ac224, type: 2}
+  - {fileID: 11400000, guid: b4d1a5a517e1a0243a611750ff08eb6f, type: 2}
+  - {fileID: 11400000, guid: 451611f4aba758f4ab407097cb56dce6, type: 2}
+  - {fileID: 11400000, guid: 9f49efdf988830049a0d7a5959165397, type: 2}

@@ -16,7 +16,7 @@ MonoBehaviour:
   title: 
   lhs:
   - FeS2
-  - 02
+  - O2
   rhs:
   - Fe2O3
   - SO2

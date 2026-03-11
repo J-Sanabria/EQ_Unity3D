@@ -14,15 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stepId: intro_01
   speakerName: Dalton
-  portrait: {fileID: -952943033, guid: 34922c41b6f9812498ee2e7236d44369, type: 3}
+  portrait: {fileID: 1941488226, guid: bba7a6cb87344ad41b913c51499e5fa9, type: 3}
   autoCloseByTime: 0
   autoCloseSeconds: 6
   delayBeforeShow: 1
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
   text: "\xA1Bien! Esa es una llave elemental. Ahora puedes ajustar los coeficientes
-    relacionados con ese grupo. Siguiente paso: re\xFAne las llaves necesarias\u2026
-    y volvamos a la balanza."
+    relacionados con ese grupo u elemento. Siguiente paso: re\xFAne todas las llaves
+    necesarias, as\xED que sigamos buscando y volvamos a la balanza."
   hint: Enter - Continuar | Espacio - Saltar texto
   advanceMode: 0
   requiredFlag: 
