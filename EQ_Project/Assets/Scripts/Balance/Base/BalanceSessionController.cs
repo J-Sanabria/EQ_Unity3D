@@ -12,6 +12,12 @@ namespace CB.Balance
         public int score;
     }
 
+    public enum VerifyResult
+    {
+        BalancedMinimal,
+        BalancedNotMinimal,
+        Incorrect
+    }
     public enum AdjustBlockReason
     {
         None,
@@ -43,6 +49,7 @@ namespace CB.Balance
         string _boundReactionId;
         public BalanceStation Station { get; private set; }
 
+        public event Action<VerifyResult> OnVerifyFeedback;
         public event Action<int, int, int, int> OnAdjustedApplied;
         public Func<int, int, int, AdjustBlockReason> CanAdjustReason;
         public event Action<AdjustBlockReason> OnAdjustBlocked;
@@ -156,6 +163,31 @@ namespace CB.Balance
         // -------------------------
         // Validación
         // -------------------------
+
+        public void Verify()
+        {
+            if (!running || Station == null || Station.reaction == null)
+                return;
+
+            if (IsBalanced())
+            {
+                if (IsBalancedMinimal())
+                {
+                    OnVerifyFeedback?.Invoke(VerifyResult.BalancedMinimal);
+                    CompleteSession();
+                }
+                else
+                {
+                    RegisterError();
+                    OnVerifyFeedback?.Invoke(VerifyResult.BalancedNotMinimal);
+                }
+            }
+            else
+            {
+                RegisterError();
+                OnVerifyFeedback?.Invoke(VerifyResult.Incorrect);
+            }
+        }
         public bool IsBalanced()
         {
             if (Station == null || Station.reaction == null)

@@ -10,7 +10,6 @@ public enum PhaseKey
 
 public interface IKeyReceiver
 {
-    /// <returns>true si la llave fue aceptada</returns>
     bool ReceiveKey(PhaseKey key, Transform source);
 }
 
@@ -24,62 +23,43 @@ public class PhaseKeyCollectible : MonoBehaviour
     [SerializeField] private LayerMask collectorLayers;
     [SerializeField] private string requiredTag = "Player";
 
-    [Header("Feedback (optional)")]
+    [Header("Feedback")]
     [SerializeField] private AudioClip pickupSfx;
+    [SerializeField] private float pickupSfxVolume = 1f;
     [SerializeField] private ParticleSystem pickupVfx;
 
-    [SerializeField] TutorialManager tutorial;
+    [SerializeField] private TutorialManager tutorial;
 
-    Collider _col;
-    AudioSource _audio;
+    private Collider _col;
 
     public PhaseKey Key => key;
 
-    void Awake()
+    private void Awake()
     {
         _col = GetComponent<Collider>();
         _col.isTrigger = true;
-
-        // AudioSource opcional
-        if (pickupSfx != null)
-        {
-            _audio = GetComponent<AudioSource>();
-            if (_audio == null)
-            {
-                _audio = gameObject.AddComponent<AudioSource>();
-                _audio.playOnAwake = false;
-                _audio.spatialBlend = 1f;
-            }
-        }
     }
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
-
-
-        // Layer filter
         if (((1 << other.gameObject.layer) & collectorLayers.value) == 0) return;
 
-        // Tag filter (si lo usas)
         if (!string.IsNullOrEmpty(requiredTag) && !other.CompareTag(requiredTag)) return;
 
         var receiver = other.GetComponentInParent<IKeyReceiver>();
         if (receiver == null) return;
 
-        if (!receiver.ReceiveKey(key, transform)){
-   
+        if (!receiver.ReceiveKey(key, transform))
             return;
-        }
+
         if (pickupVfx != null)
             Instantiate(pickupVfx, transform.position, Quaternion.identity);
 
-        if (_audio != null && pickupSfx != null)
-            _audio.PlayOneShot(pickupSfx);
+        if (pickupSfx != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySfxAtPosition(pickupSfx, transform.position, pickupSfxVolume);
 
-        if (tutorial != null)
-            tutorial?.PlayEventOnce(TutorialEvent.FirstKeyPicked);
+        tutorial?.PlayEventOnce(TutorialEvent.FirstKeyPicked);
 
-        // Desactivar COMPLETO: más simple que apagar render
         gameObject.SetActive(false);
     }
 

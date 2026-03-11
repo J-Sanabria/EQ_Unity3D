@@ -179,28 +179,10 @@ namespace CB.Core
 
         void OnVerifyRequested()
         {
-            if (CurrentStation == null || CurrentStation.session == null) return;
+            if (CurrentStation == null || CurrentStation.session == null)
+                return;
 
-            var session = CurrentStation.session;
-            if (session.IsBalanced())
-            {
-                if (session.IsBalancedMinimal())
-                {
-                    session.CompleteSession();
-                }
-                else
-                {
-                    session.RegisterError();
-                    if (tutorial != null)
-                        tutorial?.PlayEventOnce(TutorialEvent.MinimalBalance);
-                    Debug.Log("[Balance] Balanceada pero NO mínima (simplifica coeficientes).");
-                }
-            }
-            else
-            {
-                session.RegisterError();
-                Debug.Log("[Balance] Ecuación incorrecta");
-            }
+            CurrentStation.session.Verify();
         }
 
         public void EnterResults()

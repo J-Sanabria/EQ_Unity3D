@@ -1,20 +1,30 @@
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance { get; private set; }
 
-    const string K_Fullscreen = "SET_fullscreen";
-    const string K_Mute = "SET_mute";
-    const string K_Volume = "SET_volume";
+    private const string K_Fullscreen = "SET_fullscreen";
+    private const string K_Mute = "SET_mute";
+    private const string K_MasterVolume = "SET_masterVolume";
+
+    [Header("Audio")]
+    [SerializeField] private AudioMixer mainMixer;
+    [SerializeField] private string masterVolumeParam = "MasterVolume";
 
     public bool Fullscreen { get; private set; }
     public bool Mute { get; private set; }
     public float Volume { get; private set; }
 
-    void Awake()
+    private void Awake()
     {
-        if (Instance != null) { Destroy(gameObject); return; }
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
@@ -26,15 +36,27 @@ public class SettingsManager : MonoBehaviour
     {
         Fullscreen = PlayerPrefs.GetInt(K_Fullscreen, Screen.fullScreen ? 1 : 0) == 1;
         Mute = PlayerPrefs.GetInt(K_Mute, 0) == 1;
-        Volume = PlayerPrefs.GetFloat(K_Volume, 1f);
-        Volume = Mathf.Clamp01(Volume);
+        Volume = Mathf.Clamp01(PlayerPrefs.GetFloat(K_MasterVolume, 1f));
     }
 
     public void ApplyAll()
     {
         Screen.fullScreen = Fullscreen;
-        AudioListener.pause = Mute;
-        AudioListener.volume = Volume;
+        ApplyAudio();
+    }
+
+    private void ApplyAudio()
+    {
+        if (mainMixer == null) return;
+
+        if (Mute || Volume <= 0.0001f)
+        {
+            mainMixer.SetFloat(masterVolumeParam, -80f);
+            return;
+        }
+
+        float db = Mathf.Log10(Volume) * 20f;
+        mainMixer.SetFloat(masterVolumeParam, db);
     }
 
     public void SetFullscreen(bool on)
@@ -48,7 +70,7 @@ public class SettingsManager : MonoBehaviour
     public void SetMute(bool on)
     {
         Mute = on;
-        AudioListener.pause = on;
+        ApplyAudio();
         PlayerPrefs.SetInt(K_Mute, on ? 1 : 0);
         PlayerPrefs.Save();
     }
@@ -56,8 +78,8 @@ public class SettingsManager : MonoBehaviour
     public void SetVolume(float v)
     {
         Volume = Mathf.Clamp01(v);
-        AudioListener.volume = Volume;
-        PlayerPrefs.SetFloat(K_Volume, Volume);
+        ApplyAudio();
+        PlayerPrefs.SetFloat(K_MasterVolume, Volume);
         PlayerPrefs.Save();
     }
 }
