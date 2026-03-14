@@ -56,7 +56,7 @@ public class PhaseKeyCollectible : MonoBehaviour
             Instantiate(pickupVfx, transform.position, Quaternion.identity);
 
         if (pickupSfx != null && AudioManager.Instance != null)
-            AudioManager.Instance.PlaySfxAtPosition(pickupSfx, transform.position, pickupSfxVolume);
+            AudioManager.Instance.PlaySfx(pickupSfx, pickupSfxVolume);
 
         tutorial?.PlayEventOnce(TutorialEvent.FirstKeyPicked);
 

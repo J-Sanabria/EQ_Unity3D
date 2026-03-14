@@ -20,8 +20,8 @@ MonoBehaviour:
   delayBeforeShow: 0
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: "!Bien\xA1 Completamos el nivel fac\xEDl, vamos por las ecuaciones de mediana
-    dificicultad, conf\xEDo en t\xED."
+  text: "!Bien\xA1 Completamos el nivel Medio, vamos por las ecuaciones dificiles,
+    Ya casi lo logramos."
   hint: Enter - Continuar | Espacio - Saltar texto
   advanceMode: 0
   requiredFlag: 

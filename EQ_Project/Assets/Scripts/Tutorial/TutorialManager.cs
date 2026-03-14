@@ -19,9 +19,7 @@ public enum TutorialEvent
     FirstInteract,
     FirstKeyPicked,
     EnterBalance,
-    MinimalBalance,
-    lockedPhase,
-    NoKeys
+    MinimalBalance
 }
 
 [System.Serializable]
@@ -34,46 +32,38 @@ public class TutorialEventBlock
 public class TutorialManager : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] TutorialUI ui;
+    [SerializeField] private TutorialUI ui;
 
-    [Header("Start Sequence (Tutorial only)")]
-    [SerializeField] List<ScheduledBlock> startSequence = new();
+    [Header("Start Sequence")]
+    [SerializeField] private List<ScheduledBlock> startSequence = new();
 
     [Header("Event Blocks")]
-    [SerializeField] List<TutorialEventBlock> eventBlocks = new();
+    [SerializeField] private List<TutorialEventBlock> eventBlocks = new();
 
     [Header("Behavior")]
-    [SerializeField] bool pauseGameWhileDialogue = true;
-    [SerializeField] bool allowQueue = false;
+    [SerializeField] private bool pauseGameWhileDialogue = true;
+    [SerializeField] private bool allowQueue = false;
 
-    [Header("Input Lock (IMPORTANT)")]
-    [SerializeField] PlayerInput playerInput;                 // el PlayerInput del jugador
-    [SerializeField] string gameplayMapName = "Player";        // tu mapa real
-    [SerializeField] string balanceMapName = "Balance";        // tu mapa balance
-    [SerializeField] string tutorialMapName = "UI";            // opcional (si existe)
-    [SerializeField] bool useTutorialMap = false;
-    [SerializeField] ActionMapSwitcher mapSwitcher;
+    [Header("Input Lock")]
+    [SerializeField] private ActionMapSwitcher mapSwitcher;
 
-
-    public bool IsDialogueActive => _running; // o ui.IsOpen si prefieres
+    public bool IsDialogueActive => _running;
     public bool IsBlockingGameplayNow => _running && _current != null && _current.pauseWhileShowing;
 
-    string _prevActionMapName;
-    bool _inputLockedByTutorial;
+    private bool _inputLockedByTutorial;
 
-    readonly HashSet<string> _playedBlocks = new();
-    readonly Dictionary<TutorialEvent, TutorialBlockAsset> _eventMap = new();
+    private readonly HashSet<string> _playedBlocks = new();
+    private readonly Dictionary<TutorialEvent, TutorialBlockAsset> _eventMap = new();
+    private readonly Queue<TutorialStepAsset> _queue = new();
 
-    readonly Queue<TutorialStepAsset> _queue = new();
+    private TutorialStepAsset _current;
+    private bool _running;
+    private Coroutine _autoCloseRoutine;
 
-    TutorialStepAsset _current;
-    bool _running;
-    Coroutine _autoCloseRoutine;
-
-    void Awake()
+    private void Awake()
     {
-        // build map
         _eventMap.Clear();
+
         for (int i = 0; i < eventBlocks.Count; i++)
         {
             var eb = eventBlocks[i];
@@ -82,35 +72,46 @@ public class TutorialManager : MonoBehaviour
         }
     }
 
-    // ---------- Helper: Lock/Unlock ----------
-    void LockGameplayInput()
-    {
-        if (_inputLockedByTutorial) return;
-        _inputLockedByTutorial = true;
-
-        mapSwitcher?.PushUI();
-    }
-
-    void UnlockGameplayInput()
-    {
-        if (!_inputLockedByTutorial) return;
-        _inputLockedByTutorial = false;
-
-        mapSwitcher?.Pop();
-    }
-    bool IsPausingStep(TutorialStepAsset step)
-    {
-        return step != null && step.pauseWhileShowing;
-    }
-
-
-    void Start()
+    private void Start()
     {
         if (startSequence != null && startSequence.Count > 0)
             StartCoroutine(RunStartSequence());
     }
 
-    IEnumerator RunStartSequence()
+    private void Update()
+    {
+        if (!_running || ui == null || !ui.IsOpen) return;
+
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+            ui.SkipTyping();
+
+        if (Keyboard.current.enterKey.wasPressedThisFrame)
+        {
+            if (ui.IsTyping) ui.SkipTyping();
+            else TryContinue();
+        }
+    }
+
+    private void LockGameplayInput()
+    {
+        if (_inputLockedByTutorial) return;
+        _inputLockedByTutorial = true;
+        mapSwitcher?.PushUI();
+    }
+
+    private void UnlockGameplayInput()
+    {
+        if (!_inputLockedByTutorial) return;
+        _inputLockedByTutorial = false;
+        mapSwitcher?.Pop();
+    }
+
+    private bool IsPausingStep(TutorialStepAsset step)
+    {
+        return step != null && step.pauseWhileShowing;
+    }
+
+    private IEnumerator RunStartSequence()
     {
         for (int i = 0; i < startSequence.Count; i++)
         {
@@ -133,7 +134,6 @@ public class TutorialManager : MonoBehaviour
         }
     }
 
-    // ---------- Public API ----------
     public void PlayEventOnce(TutorialEvent ev)
     {
         if (_eventMap.TryGetValue(ev, out var block) && block != null)
@@ -144,35 +144,22 @@ public class TutorialManager : MonoBehaviour
     {
         if (block == null) return;
         if (string.IsNullOrEmpty(block.blockId)) return;
-
         if (_playedBlocks.Contains(block.blockId)) return;
         if (_running && !allowQueue) return;
 
         _playedBlocks.Add(block.blockId);
 
         for (int i = 0; i < block.steps.Count; i++)
-            if (block.steps[i] != null) _queue.Enqueue(block.steps[i]);
+        {
+            if (block.steps[i] != null)
+                _queue.Enqueue(block.steps[i]);
+        }
 
         if (!_running)
             NextStep();
     }
 
-    // ---------- Input (dialogue) ----------
-    void Update()
-    {
-        if (!_running || ui == null || !ui.IsOpen) return;
-
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-            ui.SkipTyping();
-
-        if (Keyboard.current.enterKey.wasPressedThisFrame)
-        {
-            if (ui.IsTyping) ui.SkipTyping();
-            else TryContinue();
-        }
-    }
-
-    void NextStep()
+    private void NextStep()
     {
         if (_queue.Count == 0)
         {
@@ -183,14 +170,14 @@ public class TutorialManager : MonoBehaviour
         _running = true;
         _current = _queue.Dequeue();
 
-        if (_autoCloseRoutine != null) StopCoroutine(_autoCloseRoutine);
-        _autoCloseRoutine = null;
+        if (_autoCloseRoutine != null)
+            StopCoroutine(_autoCloseRoutine);
 
+        _autoCloseRoutine = null;
         StartCoroutine(ShowStepWithDelay(_current));
     }
 
-    // ---------- en ShowStepWithDelay ----------
-    IEnumerator ShowStepWithDelay(TutorialStepAsset step)
+    private IEnumerator ShowStepWithDelay(TutorialStepAsset step)
     {
         float d = Mathf.Max(0f, step.delayBeforeShow);
         float t = 0f;
@@ -201,7 +188,6 @@ public class TutorialManager : MonoBehaviour
             yield return null;
         }
 
-        // si este paso va a pausar, bloquea input ANTES de mostrar
         if (IsPausingStep(step))
         {
             LockGameplayInput();
@@ -209,19 +195,17 @@ public class TutorialManager : MonoBehaviour
         }
         else
         {
-            // si este paso NO pausa, asegúrate de no dejarlo bloqueado por error
             UnlockGameplayInput();
             if (pauseGameWhileDialogue) Time.timeScale = 1f;
         }
 
         ui.Show(step.portrait, step.speakerName, step.text, step.hint);
 
-        // AutoClose...
         if (step.autoCloseByTime && step.autoCloseSeconds > 0f)
             _autoCloseRoutine = StartCoroutine(AutoCloseAfter(step.autoCloseSeconds));
     }
 
-    IEnumerator AutoCloseAfter(float seconds)
+    private IEnumerator AutoCloseAfter(float seconds)
     {
         float t = 0f;
         while (t < seconds)
@@ -233,7 +217,7 @@ public class TutorialManager : MonoBehaviour
         TryContinue(force: true);
     }
 
-    void TryContinue(bool force = false)
+    private void TryContinue(bool force = false)
     {
         if (_current == null) return;
 
@@ -241,25 +225,20 @@ public class TutorialManager : MonoBehaviour
         {
             ui.Hide();
 
-            // reanuda tiempo si el paso pausaba
             if (pauseGameWhileDialogue) Time.timeScale = 1f;
-
-            // desbloquea input
             UnlockGameplayInput();
 
             NextStep();
         }
     }
-    void EndDialogue()
+
+    private void EndDialogue()
     {
         _running = false;
         _current = null;
         ui.Hide();
-        if (pauseGameWhileDialogue) Time.timeScale = 1f;
 
-        // desbloquea al terminar TODO
+        if (pauseGameWhileDialogue) Time.timeScale = 1f;
         UnlockGameplayInput();
     }
-
-
 }

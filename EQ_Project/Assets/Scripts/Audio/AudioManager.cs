@@ -1,21 +1,21 @@
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
 
-    [Header("2D SFX")]
-    [SerializeField] private AudioSource sfx2DSource;
+    [Header("Mixer Groups")]
+    [SerializeField] private AudioMixerGroup sfxGroup;
+    [SerializeField] private AudioMixerGroup musicGroup;
 
-    [Header("Music")]
+    [Header("Sources")]
+    [SerializeField] private AudioSource sfxSource;
     [SerializeField] private AudioSource musicSource;
-
-    [Header("3D SFX")]
-    [SerializeField] private AudioSource sfx3DPrefab;
 
     private void Awake()
     {
-        if (Instance != null)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -24,64 +24,52 @@ public class AudioManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (sfx2DSource == null)
-        {
-            GameObject go = new GameObject("SFX_2D");
-            go.transform.SetParent(transform);
-            sfx2DSource = go.AddComponent<AudioSource>();
-            sfx2DSource.playOnAwake = false;
-            sfx2DSource.spatialBlend = 0f;
-        }
+        ValidateAndConfigureSources();
+    }
+
+    private void ValidateAndConfigureSources()
+    {
+        if (sfxSource == null)
+            Debug.LogError("[AudioManager] Falta asignar SFX Source.", this);
 
         if (musicSource == null)
+            Debug.LogError("[AudioManager] Falta asignar Music Source.", this);
+
+        if (sfxGroup == null)
+            Debug.LogError("[AudioManager] Falta asignar SFX Group.", this);
+
+        if (musicGroup == null)
+            Debug.LogError("[AudioManager] Falta asignar Music Group.", this);
+
+        if (sfxSource != null)
         {
-            GameObject go = new GameObject("Music");
-            go.transform.SetParent(transform);
-            musicSource = go.AddComponent<AudioSource>();
+            sfxSource.playOnAwake = false;
+            sfxSource.loop = false;
+            sfxSource.spatialBlend = 0f;
+            sfxSource.outputAudioMixerGroup = sfxGroup;
+        }
+
+        if (musicSource != null)
+        {
             musicSource.playOnAwake = false;
             musicSource.loop = true;
             musicSource.spatialBlend = 0f;
+            musicSource.outputAudioMixerGroup = musicGroup;
         }
     }
 
     public void PlaySfx(AudioClip clip, float volume = 1f)
     {
-        if (clip == null || sfx2DSource == null) return;
-        sfx2DSource.PlayOneShot(clip, Mathf.Clamp01(volume));
-    }
-
-    public void PlaySfxAtPosition(AudioClip clip, Vector3 position, float volume = 1f, float spatialBlend = 1f)
-    {
-        if (clip == null) return;
-
-        if (sfx3DPrefab != null)
-        {
-            AudioSource src = Instantiate(sfx3DPrefab, position, Quaternion.identity);
-            src.spatialBlend = spatialBlend;
-            src.clip = clip;
-            src.volume = Mathf.Clamp01(volume);
-            src.Play();
-            Destroy(src.gameObject, clip.length + 0.1f);
-            return;
-        }
-
-        GameObject go = new GameObject("Temp3DSFX");
-        go.transform.position = position;
-
-        AudioSource srcFallback = go.AddComponent<AudioSource>();
-        srcFallback.playOnAwake = false;
-        srcFallback.spatialBlend = spatialBlend;
-        srcFallback.clip = clip;
-        srcFallback.volume = Mathf.Clamp01(volume);
-        srcFallback.Play();
-
-        Destroy(go, clip.length + 0.1f);
+        if (clip == null || sfxSource == null) return;
+        sfxSource.PlayOneShot(clip, Mathf.Clamp01(volume));
     }
 
     public void PlayMusic(AudioClip clip, bool loop = true, float volume = 1f)
     {
         if (musicSource == null) return;
-        if (musicSource.clip == clip) return;
+
+        if (musicSource.clip == clip && musicSource.isPlaying)
+            return;
 
         musicSource.clip = clip;
         musicSource.loop = loop;

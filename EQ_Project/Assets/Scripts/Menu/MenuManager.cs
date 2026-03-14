@@ -12,6 +12,7 @@ public class MenuManager : MonoBehaviour
     [SerializeField] GameObject panelEstudiante; // panel de estudiante
     [SerializeField] GameObject panelProfesor;   // panel de profesor
     [SerializeField] GameObject panelCrearUsuario;
+    [SerializeField] private SettingsController settingsController;
 
 
     [SerializeField] LevelConfig tutorialLevelConfig; // asigna en inspector
@@ -82,7 +83,11 @@ public class MenuManager : MonoBehaviour
     // Botones principales
     // =========================================================
     public void OnClick_Iniciar() => GoTo(panelEscogerRol);
-    public void OnClick_Configuracion() => GoTo(panelConfiguracion);
+    public void OnClick_Configuracion()
+    {
+        GoTo(panelConfiguracion);
+        settingsController?.RefreshUI();
+    }
     public void OnClick_Salir() => GoTo(panelSalir);
     public void OnClick_VolverMenuInicio() => ShowOnly(panelInicio, clearStack: true);
 

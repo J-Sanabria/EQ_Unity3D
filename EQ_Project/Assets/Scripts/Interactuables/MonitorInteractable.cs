@@ -7,6 +7,10 @@ public class MonitorInteractable : MonoBehaviour, IInteractable
     [SerializeField] private BalanceStation station;
     [SerializeField] private InteractableHighlight highlight;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip activateSfx;
+    [SerializeField] private float activateVolume = 1f;
+
     public string Prompt => "E o Enter - Iniciar balanceo";
 
     void Awake()
@@ -38,6 +42,9 @@ public class MonitorInteractable : MonoBehaviour, IInteractable
     {
         if (level == null || station == null)
             return;
+
+        if (activateSfx != null && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySfx(activateSfx, activateVolume);
 
         level.RequestStartBalance(station);
     }
