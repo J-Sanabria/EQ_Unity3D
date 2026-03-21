@@ -23,6 +23,6 @@ MonoBehaviour:
   text: "\xA1Bien! Esa es una llave elemental. Ahora puedes ajustar los coeficientes
     relacionados con ese grupo u elemento. Siguiente paso: re\xFAne todas las llaves
     necesarias, as\xED que sigamos buscando y volvamos a la balanza."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

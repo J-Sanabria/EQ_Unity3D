@@ -23,6 +23,6 @@ MonoBehaviour:
   text: "Ahora est\xE1n bloqueados con un candado porque el accidente los dispers\xF3,
     necesitamos de las llaves elementales para recurrir a ellos, est\xE1n regadas
     por todo el laboratorio."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

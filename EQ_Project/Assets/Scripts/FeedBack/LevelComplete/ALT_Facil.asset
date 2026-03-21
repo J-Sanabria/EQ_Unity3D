@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a966fe75a8ffc9f48aa5011622641558, type: 3}
+  m_Name: ALT_Facil
+  m_EditorClassIdentifier: 
+  stepId: alert_01
+  speakerName: Sistema
+  portrait: {fileID: 1829029365, guid: b9dfe24b520dc9d4f94ae0f241c80104, type: 3}
+  text: "\xA1Completaste el nivel Facil!"
+  hint: 
+  duration: 1.75
+  delayBeforeShow: 0
+  useUnscaledTime: 1

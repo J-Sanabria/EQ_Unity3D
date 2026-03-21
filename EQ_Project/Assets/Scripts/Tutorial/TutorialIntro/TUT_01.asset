@@ -21,6 +21,6 @@ MonoBehaviour:
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
   text: "Auch\u2026\nOk. Nota mental: no volver a tocar palancas rojas."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

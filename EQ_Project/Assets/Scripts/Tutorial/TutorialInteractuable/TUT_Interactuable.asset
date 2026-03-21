@@ -22,6 +22,6 @@ MonoBehaviour:
   pauseWhileShowing: 1
   text: "\xBFVes ese \xEDcono? Eso significa \u201Cinteractuar\u201D.\nPresiona E
     o Enter para usar objetos.\nPrometo que esta vez no explotar\xE1 nada\u2026 creo."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

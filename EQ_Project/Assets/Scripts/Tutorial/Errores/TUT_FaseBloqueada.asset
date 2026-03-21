@@ -21,6 +21,6 @@ MonoBehaviour:
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
   text: "A\xFAn no puedes ajustar este compuesto. Primero completa la fase actual."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

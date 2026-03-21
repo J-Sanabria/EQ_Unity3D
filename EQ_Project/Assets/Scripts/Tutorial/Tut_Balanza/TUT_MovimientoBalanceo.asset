@@ -23,6 +23,6 @@ MonoBehaviour:
   text: "Usa A/D (o \u2190/\u2192) para moverte entre compuestos. Usa W/S (o \u2191/\u2193)
     para subir o bajar el coeficiente. Cuando creas que est\xE1 listo, presiona Verificar.
     Y si quieres salir, ESC."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

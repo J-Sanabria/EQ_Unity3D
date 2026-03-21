@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using CB.Balance;
@@ -20,12 +21,21 @@ public class LevelController : MonoBehaviour
     [SerializeField] private PlayerRespawner playerRespawner;
     [SerializeField] private PhaseGateController gateController;
     [SerializeField] private ActionMapSwitcher mapSwitcher;
-    [SerializeField] private GameObject nextLevelDoor;
+    [SerializeField] private TutorialManager tutorial;
+    [SerializeField] private AlertHUD alertHUD;
+    [SerializeField] private RouteShuffleController routeShuffleController;
 
     [Header("Next Level")]
     [SerializeField] private string easySceneName = "Easy";
     [SerializeField] private LevelConfig easyLevelConfig;
     [SerializeField] private bool autoAdvanceToEasy = true;
+
+    [Header("Final Level")]
+    [SerializeField] private bool isFinalLevel = false;
+    [SerializeField] private string mainMenuSceneName = "Menu";
+
+    [Header("Level Complete Alerts")]
+    [SerializeField] private AlertStepAsset CompletedLevelAlert;
 
     private float levelElapsedTime;
     private bool levelTimerRunning;
@@ -46,6 +56,8 @@ public class LevelController : MonoBehaviour
     [SerializeField] private string editorUser = "TestUser";
 #endif
 
+
+
     private void Awake()
     {
         if (resultPanel != null)
@@ -60,7 +72,6 @@ public class LevelController : MonoBehaviour
 #if UNITY_EDITOR
         if (!editorAutoStart) return;
 
-        // Si GameManager ya pidió iniciar desde menú, no hagas auto start local.
         if (GameManager.Instance != null && GameManager.Instance.WillAutoStartLevel())
             return;
 
@@ -158,6 +169,8 @@ public class LevelController : MonoBehaviour
         levelElapsedTime = 0f;
         levelTimerRunning = true;
         phase = LevelPhase.Exploration;
+
+        routeShuffleController?.ResetRun();
 
         LoadReaction();
     }
@@ -266,11 +279,18 @@ public class LevelController : MonoBehaviour
         if (gateController != null)
             gateController.Configure(phaseManager.GetPresentPhases(), levelConfig.difficulty);
 
+        var presentPhases = phaseManager.GetPresentPhases();
+        routeShuffleController?.ApplyLayoutForReaction(currentIndex, presentPhases);
+
+
         if (playerRespawner != null && spawnPoint != null)
             playerRespawner.RespawnAt(spawnPoint);
 
         phase = LevelPhase.Exploration;
         gameMode.EnterExploration();
+
+        TryPlayReactionConceptTutorial(reaction);
+
     }
 
     public void RequestStartBalance(BalanceStation station)
@@ -343,6 +363,16 @@ public class LevelController : MonoBehaviour
         {
             ExitResultsMode();
 
+            if (isFinalLevel)
+            {
+                if (GameManager.Instance != null)
+                    GameManager.Instance.FinishGameAndReturnToMenu(mainMenuSceneName);
+                else
+                    Debug.LogError("[LevelController] No existe GameManager para volver al menú.");
+
+                return;
+            }
+
             if (autoAdvanceToEasy)
             {
                 if (GameManager.Instance == null)
@@ -352,10 +382,6 @@ public class LevelController : MonoBehaviour
                 }
 
                 GameManager.Instance.AdvanceToLevel(easySceneName, easyLevelConfig);
-            }
-            else
-            {
-                ActivateNextLevelDoor();
             }
         }
     }
@@ -371,6 +397,11 @@ public class LevelController : MonoBehaviour
 
     private void CompleteLevel()
     {
+        StartCoroutine(CompleteLevelRoutine());
+    }
+
+    private IEnumerator CompleteLevelRoutine()
+    {
         levelTimerRunning = false;
         phase = LevelPhase.LevelCompleted;
 
@@ -381,6 +412,14 @@ public class LevelController : MonoBehaviour
             score = totalScore,
             reactionId = ""
         };
+
+        string levelName = GetDifficultyDisplayName();
+        if (alertHUD != null)
+        {
+            alertHUD.ShowAlert(CompletedLevelAlert);
+            if (CompletedLevelAlert != null)
+                yield return new WaitForSecondsRealtime(CompletedLevelAlert.duration + CompletedLevelAlert.delayBeforeShow + 0.05f);
+        }
 
         GameManager.Instance?.AddScore(totalScore);
 
@@ -393,12 +432,20 @@ public class LevelController : MonoBehaviour
         resultPanel.Show(summary, ResultContext.LevelCompleted);
     }
 
-    private void ActivateNextLevelDoor()
+    private string GetDifficultyDisplayName()
     {
-        if (nextLevelDoor != null)
-            nextLevelDoor.SetActive(true);
-    }
+        if (levelConfig == null)
+            return "completado";
 
+        switch (levelConfig.difficulty)
+        {
+            case Difficulty.Tutorial: return "Tutorial";
+            case Difficulty.Easy: return "Fácil";
+            case Difficulty.Medium: return "Medio";
+            case Difficulty.Hard: return "Difícil";
+            default: return "Completado";
+        }
+    }
     private void ExitResultsMode()
     {
         Time.timeScale = 1f;
@@ -409,4 +456,43 @@ public class LevelController : MonoBehaviour
         mapSwitcher?.Pop();
         gameMode?.EnterExploration(force: true);
     }
+
+    // Reacciones especificas
+    private bool ReactionHasParentheses(ReactionAsset reaction)
+    {
+        if (reaction == null)
+            return false;
+
+        if (reaction.lhs != null)
+        {
+            for (int i = 0; i < reaction.lhs.Length; i++)
+            {
+                string formula = reaction.lhs[i];
+                if (!string.IsNullOrEmpty(formula) && (formula.Contains("(") || formula.Contains(")")))
+                    return true;
+            }
+        }
+
+        if (reaction.rhs != null)
+        {
+            for (int i = 0; i < reaction.rhs.Length; i++)
+            {
+                string formula = reaction.rhs[i];
+                if (!string.IsNullOrEmpty(formula) && (formula.Contains("(") || formula.Contains(")")))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void TryPlayReactionConceptTutorial(ReactionAsset reaction)
+    {
+        if (tutorial == null || reaction == null)
+            return;
+
+        if (ReactionHasParentheses(reaction))
+            tutorial.PlayEventOnce(TutorialEvent.Parantesis);
+    }
+
 }

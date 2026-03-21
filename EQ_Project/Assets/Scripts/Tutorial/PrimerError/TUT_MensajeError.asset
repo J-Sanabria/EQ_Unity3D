@@ -22,6 +22,6 @@ MonoBehaviour:
   pauseWhileShowing: 1
   text: "Casi\u2026 pero todav\xEDa no.\nNo pasa nada: aqu\xED el error es parte
     del m\xE9todo."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

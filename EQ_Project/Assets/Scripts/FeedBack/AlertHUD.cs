@@ -1,86 +1,164 @@
 using System.Collections;
-using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class AlertHUD : MonoBehaviour
 {
-    [Header("UI")]
-    [SerializeField] private GameObject root;
-    [SerializeField] private TMP_Text messageText;
-    [SerializeField] private CanvasGroup canvasGroup;
+    [Header("Refs")]
+    [SerializeField] private TutorialUI ui;
 
-    [Header("Timing")]
-    [SerializeField] private float defaultDuration = 1.8f;
-    [SerializeField] private float fadeInSpeed = 12f;
-    [SerializeField] private float fadeOutSpeed = 8f;
-    [SerializeField] private bool useUnscaledTime = true;
+    [Header("Behavior")]
+    [SerializeField] private bool queueAlerts = false;
 
-    private Coroutine _showRoutine;
+    [Header("Dismiss Input")]
+    [SerializeField] private bool allowManualDismiss = true;
+    [SerializeField] private bool dismissWithEnter = true;
+    [SerializeField] private bool dismissWithEscape = true;
+    [SerializeField] private float manualDismissDelay = 0.12f;
+
+    private readonly Queue<AlertRequest> _queue = new();
+
+    private Coroutine _routine;
+    private bool _showing;
+    private bool _dismissRequested;
+    private bool _canManualDismiss;
+
+    private struct AlertRequest
+    {
+        public Sprite portrait;
+        public string speaker;
+        public string text;
+        public string hint;
+        public float duration;
+        public float delay;
+        public bool useUnscaledTime;
+    }
 
     private void Awake()
     {
-        HideImmediate();
+        if (ui != null)
+            ui.Hide();
     }
 
-    public void ShowAlert(string message)
+    private void Update()
     {
-        ShowAlert(message, defaultDuration);
+        if (!_showing || !allowManualDismiss || !_canManualDismiss) return;
+        if (Keyboard.current == null) return;
+
+        if (dismissWithEnter && Keyboard.current.enterKey.wasPressedThisFrame)
+        {
+            _dismissRequested = true;
+            return;
+        }
+
+        if (dismissWithEscape && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            _dismissRequested = true;
+        }
     }
 
-    public void ShowAlert(string message, float duration)
+    public void ShowAlert(AlertStepAsset step)
     {
-        if (string.IsNullOrWhiteSpace(message)) return;
+        if (step == null || ui == null) return;
 
-        if (_showRoutine != null)
-            StopCoroutine(_showRoutine);
+        var req = new AlertRequest
+        {
+            portrait = step.portrait,
+            speaker = step.speakerName,
+            text = step.text,
+            hint = step.hint,
+            duration = step.duration,
+            delay = step.delayBeforeShow,
+            useUnscaledTime = step.useUnscaledTime
+        };
 
-        _showRoutine = StartCoroutine(ShowRoutine(message, duration));
+        EnqueueOrShow(req);
+    }
+
+    private void EnqueueOrShow(AlertRequest request)
+    {
+        if (_showing)
+        {
+            if (queueAlerts)
+            {
+                _queue.Enqueue(request);
+                return;
+            }
+
+            if (_routine != null)
+                StopCoroutine(_routine);
+        }
+
+        _routine = StartCoroutine(ShowRoutine(request));
+    }
+
+    private IEnumerator ShowRoutine(AlertRequest request)
+    {
+        _showing = true;
+        _dismissRequested = false;
+        _canManualDismiss = false;
+
+        if (request.delay > 0f)
+        {
+            float t = 0f;
+            while (t < request.delay)
+            {
+                t += request.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        ui.Show(request.portrait, request.speaker, request.text, request.hint);
+        ui.SkipTyping();
+
+        float dismissTimer = 0f;
+        while (dismissTimer < manualDismissDelay)
+        {
+            dismissTimer += request.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            yield return null;
+        }
+
+        _canManualDismiss = true;
+
+        float timer = 0f;
+        while (timer < request.duration)
+        {
+            if (_dismissRequested)
+                break;
+
+            timer += request.useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            yield return null;
+        }
+
+        ui.Hide();
+
+        _showing = false;
+        _dismissRequested = false;
+        _canManualDismiss = false;
+        _routine = null;
+
+        if (_queue.Count > 0)
+        {
+            var next = _queue.Dequeue();
+            _routine = StartCoroutine(ShowRoutine(next));
+        }
     }
 
     public void HideImmediate()
     {
-        if (root != null) root.SetActive(false);
-        if (canvasGroup != null) canvasGroup.alpha = 0f;
-    }
-
-    private IEnumerator ShowRoutine(string message, float duration)
-    {
-        if (messageText != null)
-            messageText.text = message;
-
-        if (root != null && !root.activeSelf)
-            root.SetActive(true);
-
-        if (canvasGroup != null)
+        if (_routine != null)
         {
-            while (canvasGroup.alpha < 1f)
-            {
-                float dt = useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-                canvasGroup.alpha = Mathf.MoveTowards(canvasGroup.alpha, 1f, fadeInSpeed * dt);
-                yield return null;
-            }
+            StopCoroutine(_routine);
+            _routine = null;
         }
 
-        float timer = 0f;
-        while (timer < duration)
-        {
-            timer += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-            yield return null;
-        }
+        _queue.Clear();
+        _showing = false;
+        _dismissRequested = false;
+        _canManualDismiss = false;
 
-        if (canvasGroup != null)
-        {
-            while (canvasGroup.alpha > 0f)
-            {
-                float dt = useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-                canvasGroup.alpha = Mathf.MoveTowards(canvasGroup.alpha, 0f, fadeOutSpeed * dt);
-                yield return null;
-            }
-        }
-
-        if (root != null)
-            root.SetActive(false);
-
-        _showRoutine = null;
+        if (ui != null)
+            ui.Hide();
     }
 }

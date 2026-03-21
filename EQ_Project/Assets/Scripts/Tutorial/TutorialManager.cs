@@ -19,7 +19,8 @@ public enum TutorialEvent
     FirstInteract,
     FirstKeyPicked,
     EnterBalance,
-    MinimalBalance
+    MinimalBalance,
+    Parantesis
 }
 
 [System.Serializable]
@@ -89,6 +90,11 @@ public class TutorialManager : MonoBehaviour
         {
             if (ui.IsTyping) ui.SkipTyping();
             else TryContinue();
+        }
+
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            SkipCurrentBlock();
         }
     }
 
@@ -230,6 +236,20 @@ public class TutorialManager : MonoBehaviour
 
             NextStep();
         }
+    }
+
+    public void SkipCurrentBlock()
+    {
+        if (!_running) return;
+
+        if (_autoCloseRoutine != null)
+        {
+            StopCoroutine(_autoCloseRoutine);
+            _autoCloseRoutine = null;
+        }
+
+        _queue.Clear();
+        EndDialogue();
     }
 
     private void EndDialogue()

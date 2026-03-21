@@ -22,6 +22,6 @@ MonoBehaviour:
   pauseWhileShowing: 1
   text: "Al lado derecho del panel ver\xE1s los elementos y grupos que la ecuaci\xF3n
     ha de necesitar: Metales, No metales, Hidr\xF3geno y Ox\xEDgeno "
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

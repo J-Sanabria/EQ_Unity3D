@@ -19,6 +19,12 @@ public class BalanceResultPanel : MonoBehaviour
     [SerializeField] Button btnContinuar;
     [SerializeField] Button btnReintentar;
 
+    [Header("UI Navigation")]
+    [SerializeField] private UIMenuSelectionDriver uiSelectionDriver;
+    [SerializeField] private GameObject firstReactionCompletedSelected;
+    [SerializeField] private GameObject firstLevelCompletedSelected;
+    [SerializeField] private GameObject firstGameCompletedSelected;
+
     public System.Action OnContinueRequested;
     public System.Action OnRetryRequested;
 
@@ -58,6 +64,25 @@ public class BalanceResultPanel : MonoBehaviour
         // Visibilidad de botones según contexto
         btnReintentar.gameObject.SetActive(context == ResultContext.ReactionCompleted);
         btnContinuar.gameObject.SetActive(true);
+
+        GameObject firstSelected = null;
+
+        switch (context)
+        {
+            case ResultContext.ReactionCompleted:
+                firstSelected = firstReactionCompletedSelected;
+                break;
+
+            case ResultContext.LevelCompleted:
+                firstSelected = firstLevelCompletedSelected;
+                break;
+
+            case ResultContext.GameCompleted:
+                firstSelected = firstGameCompletedSelected;
+                break;
+        }
+
+        uiSelectionDriver?.SetFirstSelected(firstSelected, clearCurrentSelection: true);
     }
 
     public void Hide()

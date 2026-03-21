@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-
+using UnityEngine.EventSystems;
 public class MenuManager : MonoBehaviour
 {
     [Header("Panels")]
@@ -14,6 +14,17 @@ public class MenuManager : MonoBehaviour
     [SerializeField] GameObject panelCrearUsuario;
     [SerializeField] private SettingsController settingsController;
 
+    [Header("UI Keyboard Navigation")]
+    [SerializeField] private UIMenuSelectionDriver uiSelectionDriver;
+
+    [SerializeField] private GameObject firstInicio;
+    [SerializeField] private GameObject firstConfiguracion;
+    [SerializeField] private GameObject firstEscogerRol;
+    [SerializeField] private GameObject firstSalir;
+    [SerializeField] private GameObject firstEstudiante;
+    [SerializeField] private GameObject firstProfesor;
+    [SerializeField] private GameObject firstCrearUsuario;
+    [SerializeField] private GameObject firstConfirmUsuario;
 
     [SerializeField] LevelConfig tutorialLevelConfig; // asigna en inspector
     [SerializeField] string tutorialSceneName = "Tutorial";
@@ -32,6 +43,8 @@ public class MenuManager : MonoBehaviour
     void Awake()
     {
         // Estado inicial
+        ForceMenuCursor();
+
         ShowOnly(panelInicio, clearStack: true);
     }
 
@@ -40,7 +53,6 @@ public class MenuManager : MonoBehaviour
     // =========================================================
     void ShowOnly(GameObject target, bool clearStack = false)
     {
-        // Desactiva todos
         if (panelCrearUsuario) panelCrearUsuario.SetActive(false);
         if (panelInicio) panelInicio.SetActive(false);
         if (panelConfiguracion) panelConfiguracion.SetActive(false);
@@ -50,12 +62,12 @@ public class MenuManager : MonoBehaviour
         if (panelProfesor) panelProfesor.SetActive(false);
         if (panelConfirmUsuario) panelConfirmUsuario.SetActive(false);
 
-        // Limpia pila si toca
         if (clearStack) navStack.Clear();
 
-        // Activa el deseado
         current = target;
         if (current) current.SetActive(true);
+
+        uiSelectionDriver?.SetFirstSelected(GetFirstSelectedForPanel(current), clearCurrentSelection: true);
     }
 
     // Empuja el panel actual y muestra el nuevo
@@ -193,5 +205,23 @@ public class MenuManager : MonoBehaviour
 
         GameManager.Instance.SetCurrentUser(user);
         GameManager.Instance.StartNewGame(tutorialSceneName, tutorialLevelConfig);
+    }
+
+    private GameObject GetFirstSelectedForPanel(GameObject panel)
+    {
+        if (panel == panelInicio) return firstInicio;
+        if (panel == panelConfiguracion) return firstConfiguracion;
+        if (panel == panelEscogerRol) return firstEscogerRol;
+        if (panel == panelSalir) return firstSalir;
+        if (panel == panelEstudiante) return firstEstudiante;
+        if (panel == panelProfesor) return firstProfesor;
+        if (panel == panelCrearUsuario) return firstCrearUsuario;
+        if (panel == panelConfirmUsuario) return firstConfirmUsuario;
+        return null;
+    }
+    private void ForceMenuCursor()
+    {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 }

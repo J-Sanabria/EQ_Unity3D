@@ -21,6 +21,6 @@ MonoBehaviour:
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
   text: A la derecha los productos (lo que se forma)
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

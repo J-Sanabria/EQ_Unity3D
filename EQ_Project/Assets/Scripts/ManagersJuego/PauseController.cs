@@ -12,6 +12,11 @@ public class PauseController : MonoBehaviour
     [SerializeField] CB.Core.GameModeController gameMode;
     [SerializeField] LevelController levelController;
 
+    [Header("UI Navigation")]
+    [SerializeField] private UIMenuSelectionDriver uiSelectionDriver;
+    [SerializeField] private GameObject firstPauseSelected;
+    [SerializeField] private GameObject firstSettingsSelected;
+
     [Header("Input")]
     [SerializeField] InputActionReference pauseAction;   // Player/Pause (ESC)
     [SerializeField] ActionMapSwitcher mapSwitcher;       // <- IMPORTANTE
@@ -90,6 +95,8 @@ public class PauseController : MonoBehaviour
         if (pausePanel) pausePanel.SetActive(true);
         if (settingsPanel) settingsPanel.SetActive(false);
 
+        uiSelectionDriver?.SetFirstSelected(firstPauseSelected, clearCurrentSelection: true);
+
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }
@@ -119,12 +126,16 @@ public class PauseController : MonoBehaviour
     {
         if (settingsPanel) settingsPanel.SetActive(true);
         if (pausePanel) pausePanel.SetActive(false);
+
+        uiSelectionDriver?.SetFirstSelected(firstSettingsSelected, clearCurrentSelection: true);
     }
 
     public void UI_BackFromSettings()
     {
         if (settingsPanel) settingsPanel.SetActive(false);
         if (pausePanel) pausePanel.SetActive(true);
+
+        uiSelectionDriver?.SetFirstSelected(firstPauseSelected, clearCurrentSelection: true);
     }
 
     public void UI_RestartReaction()

@@ -141,4 +141,15 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"[GameManager] Puntaje final guardado: {CurrentUser} -> {CurrentScore}");
     }
+
+    public void FinishGameAndReturnToMenu(string menuSceneName)
+    {
+        if (!string.IsNullOrEmpty(CurrentUser) && UserDB.Instance != null)
+            UserDB.Instance.RecordScore(CurrentUser, CurrentScore);
+
+        Debug.Log($"[GameManager] Puntaje final guardado: {CurrentUser} -> {CurrentScore}");
+
+        _shouldAutoStartLevel = false;
+        SceneManager.LoadScene(menuSceneName);
+    }
 }

@@ -21,6 +21,6 @@ MonoBehaviour:
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
   text: Bien, ahora nuestro entorno. Mira arriba, en el panel
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

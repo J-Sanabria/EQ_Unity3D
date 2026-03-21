@@ -21,6 +21,6 @@ MonoBehaviour:
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
   text: "!Bien\xA1 Completamos el tutorial, vamos por las ecuaciones faciles."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

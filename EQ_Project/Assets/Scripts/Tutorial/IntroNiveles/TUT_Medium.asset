@@ -20,7 +20,7 @@ MonoBehaviour:
   delayBeforeShow: 0
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: 
-  hint: Enter - Continuar | Espacio - Saltar texto
+  text: "\xA1Completaste el nivel Facil! ahora vamos con el nivel Medio, tu puedes."
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

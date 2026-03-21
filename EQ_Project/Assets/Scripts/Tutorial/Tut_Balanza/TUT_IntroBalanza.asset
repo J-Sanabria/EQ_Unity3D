@@ -22,6 +22,6 @@ MonoBehaviour:
   pauseWhileShowing: 1
   text: "Perfecto. Ahora est\xE1s en modo balanceo.\nAqu\xED no mueves al personaje:
     mueves el foco por la ecuaci\xF3n."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

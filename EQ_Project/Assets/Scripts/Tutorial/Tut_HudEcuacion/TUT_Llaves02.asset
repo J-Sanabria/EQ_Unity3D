@@ -22,6 +22,6 @@ MonoBehaviour:
   pauseWhileShowing: 1
   text: "\xBFQue qu\xE9 son las llaves elementales? Son literalmente llaves que representan
     los elementos u grupos de la ecuaci\xF3n"
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

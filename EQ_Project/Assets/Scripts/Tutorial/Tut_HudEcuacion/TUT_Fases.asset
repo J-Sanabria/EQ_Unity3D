@@ -23,6 +23,6 @@ MonoBehaviour:
   text: "Al lado derecho de la ecuaci\xF3n ver\xE1s los grupos: Metales, No metales,
     Hidr\xF3geno y Ox\xEDgeno. Ahora est\xE1n bloqueados porque el accidente dispers\xF3
     sus llaves por el laboratorio."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

@@ -23,6 +23,6 @@ MonoBehaviour:
   text: "Regla de oro: la materia no se crea ni se destruye. As\xED que la cantidad
     de \xE1tomos debe ser igual en ambos lados. Si no coincide el equilibrio se rompe.
     Y cuando se rompe\u2026 bueno. M\xEDranos."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

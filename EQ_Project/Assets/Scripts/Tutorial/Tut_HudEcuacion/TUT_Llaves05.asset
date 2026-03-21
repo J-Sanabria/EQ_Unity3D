@@ -23,6 +23,6 @@ MonoBehaviour:
   text: "As\xED que el plan es sencillo: primero exploras este gigantesco mundo at\xF3mico
     y encuentras las llaves; cuando las obtienes, desbloqueas los elementos de la
     ecuaci\xF3n, y entonces s\xED podemos empezar a balancear\u2026"
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

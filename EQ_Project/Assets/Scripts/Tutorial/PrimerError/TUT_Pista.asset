@@ -23,6 +23,6 @@ MonoBehaviour:
   text: "Pista: el agua (H\u2082O) tiene 1 ox\xEDgeno.\nSi pones un coeficiente par
     en H\u2082O, ser\xE1 m\xE1s f\xE1cil empatar con O\u2082.\nAjusta, revisa\u2026
     y vuelve a Verificar."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

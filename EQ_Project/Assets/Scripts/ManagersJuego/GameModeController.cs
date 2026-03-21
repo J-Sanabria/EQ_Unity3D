@@ -22,7 +22,7 @@ namespace CB.Core
         [SerializeField] GameObject balanceCameraRig;
 
         [Header("UI Panels")]
-        [SerializeField] GameObject hudTopEquation;
+        [SerializeField] GameObject Minimap;
         [SerializeField] GameObject hudExploration;
         [SerializeField] GameObject hudBalance;
         [SerializeField] EquationHUDBinding equationHUD;
@@ -121,7 +121,7 @@ namespace CB.Core
             if (balanceCameraRig) balanceCameraRig.SetActive(balancing);
 
             // UI
-            if (hudTopEquation) hudTopEquation.SetActive(true);
+            if (Minimap) Minimap.SetActive(exploring);
             if (hudExploration) hudExploration.SetActive(exploring);
             if (hudBalance) hudBalance.SetActive(balancing);
 

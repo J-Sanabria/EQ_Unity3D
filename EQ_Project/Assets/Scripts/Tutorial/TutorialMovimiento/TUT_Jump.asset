@@ -22,6 +22,6 @@ MonoBehaviour:
   pauseWhileShowing: 1
   text: "Si necesitas saltar, usa Espacio.\r\nS\xED\u2026 ahora adem\xE1s de qu\xEDmico,
     soy personaje jugable "
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 

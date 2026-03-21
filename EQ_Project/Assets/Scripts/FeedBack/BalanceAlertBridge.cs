@@ -9,9 +9,24 @@ public class BalanceAlertBridge : MonoBehaviour
     [Header("Blocked cooldown")]
     [SerializeField] private float blockedCooldown = 0.75f;
 
+    [Header("Verify cooldown")]
+    [SerializeField] private float verifyCooldown = 0.9f;
+
+    [Header("Alert Steps")]
+    [SerializeField] private AlertStepAsset alertNoKeys;
+    [SerializeField] private AlertStepAsset alertPhaseLocked;
+    [SerializeField] private AlertStepAsset alertWrongPhaseOrder;
+    [SerializeField] private AlertStepAsset alertNotBalanced;
+    [SerializeField] private AlertStepAsset alertNotMinimal;
+    [SerializeField] private AlertStepAsset alertBalancedMinimal;
+
     private float _tNoKeys;
     private float _tLocked;
     private float _tWrongOrder;
+
+    private float _tIncorrect;
+    private float _tNotMinimal;
+    private float _tBalancedMinimal;
 
     private void Reset()
     {
@@ -48,19 +63,19 @@ public class BalanceAlertBridge : MonoBehaviour
             case AdjustBlockReason.NoKeys:
                 if (now - _tNoKeys < blockedCooldown) return;
                 _tNoKeys = now;
-                alertHUD.ShowAlert("Necesitas recoger una llave para comenzar a balancear.");
+                if (alertNoKeys != null) alertHUD.ShowAlert(alertNoKeys);
                 break;
 
             case AdjustBlockReason.PhaseLocked:
                 if (now - _tLocked < blockedCooldown) return;
                 _tLocked = now;
-                alertHUD.ShowAlert("Esta fase aún está bloqueada.");
+                if (alertPhaseLocked != null) alertHUD.ShowAlert(alertPhaseLocked);
                 break;
 
             case AdjustBlockReason.WrongPhaseOrder:
                 if (now - _tWrongOrder < blockedCooldown) return;
                 _tWrongOrder = now;
-                alertHUD.ShowAlert("Debes seguir el orden correcto de balanceo.");
+                if (alertWrongPhaseOrder != null) alertHUD.ShowAlert(alertWrongPhaseOrder);
                 break;
         }
     }
@@ -69,18 +84,26 @@ public class BalanceAlertBridge : MonoBehaviour
     {
         if (alertHUD == null) return;
 
+        float now = Time.unscaledTime;
+
         switch (result)
         {
             case VerifyResult.Incorrect:
-                alertHUD.ShowAlert("La ecuación aún no está balanceada.");
+                if (now - _tIncorrect < verifyCooldown) return;
+                _tIncorrect = now;
+                if (alertNotBalanced != null) alertHUD.ShowAlert(alertNotBalanced);
                 break;
 
             case VerifyResult.BalancedNotMinimal:
-                alertHUD.ShowAlert("Está balanceada, pero no está en su mínima expresión.");
+                if (now - _tNotMinimal < verifyCooldown) return;
+                _tNotMinimal = now;
+                if (alertNotMinimal != null) alertHUD.ShowAlert(alertNotMinimal);
                 break;
 
             case VerifyResult.BalancedMinimal:
-                alertHUD.ShowAlert("¡Ecuación balanceada correctamente!");
+                if (now - _tBalancedMinimal < verifyCooldown) return;
+                _tBalancedMinimal = now;
+                if (alertBalancedMinimal != null) alertHUD.ShowAlert(alertBalancedMinimal);
                 break;
         }
     }

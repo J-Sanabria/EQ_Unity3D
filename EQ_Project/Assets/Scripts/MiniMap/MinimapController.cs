@@ -154,7 +154,9 @@ public class MinimapController : MonoBehaviour
             float py = (ny - 0.5f) * mapSize.y;
 
             Vector2 rel = new(px - pX, py - pY);
-            rel = ClampToRect(rel, mapRect.rect);
+            float radius = Mathf.Min(mapRect.rect.width, mapRect.rect.height) * 0.5f;
+            float iconPadding = 10f; // ajustable según tamaño del icono
+            rel = ClampToCircle(rel, radius - iconPadding);
 
             icon.rectTransform.anchoredPosition = rel;
 
@@ -167,7 +169,16 @@ public class MinimapController : MonoBehaviour
             icon.rectTransform.localScale = new Vector3(s, s, 1f);
         }
     }
+    private static Vector2 ClampToCircle(Vector2 p, float radius)
+    {
+        float sqrMag = p.sqrMagnitude;
+        float maxSqr = radius * radius;
 
+        if (sqrMag > maxSqr)
+            p = p.normalized * radius;
+
+        return p;
+    }
     private void RemoveTarget(MinimapTarget target)
     {
         if (target != null)
@@ -184,14 +195,4 @@ public class MinimapController : MonoBehaviour
         }
     }
 
-    private static Vector2 ClampToRect(Vector2 p, Rect r)
-    {
-        float halfW = r.width * 0.5f;
-        float halfH = r.height * 0.5f;
-
-        p.x = Mathf.Clamp(p.x, -halfW, halfW);
-        p.y = Mathf.Clamp(p.y, -halfH, halfH);
-
-        return p;
-    }
 }

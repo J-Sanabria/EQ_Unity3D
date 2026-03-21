@@ -22,6 +22,6 @@ MonoBehaviour:
   pauseWhileShowing: 1
   text: "Creo que intent\xE9 \u201Cmejorar\u201D la balanza\u2026 y termin\xE9 deformando
     el laboratorio.\r\nPero tranquilo: se puede arreglar."
-  hint: Enter - Continuar | Espacio - Saltar texto
+  hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 
