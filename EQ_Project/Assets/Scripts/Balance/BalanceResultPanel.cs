@@ -62,14 +62,14 @@ public class BalanceResultPanel : MonoBehaviour
             {
                 txtDetalle.text =
                     $"Tutorial completado\n" +
-                    $"Tiempo: {Mathf.RoundToInt(result.timeSeconds)} s\n" +
+                    $"Tiempo: {Mathf.FloorToInt(result.timeSeconds)} s\n" +
                     $"Errores: {result.errors}\n" +
                     $"Pasos usados: {result.stepsUsed}";
             }
             else
             {
                 txtDetalle.text =
-                    $"Tiempo: {Mathf.RoundToInt(result.timeSeconds)} s / {Mathf.RoundToInt(result.targetTimeSeconds)} s\n" +
+                    $"Tiempo: {Mathf.FloorToInt(result.timeSeconds)} s / {Mathf.FloorToInt(result.targetTimeSeconds)} s\n" +
                     $"Errores: {result.errors} (-{result.penaltyErrors})\n" +
                     $"Pasos: {result.stepsUsed} / {result.idealSteps}  | margen: +{result.freeExtraSteps}\n" +
                     $"Pasos extra penalizados: {result.extraSteps} (-{result.penaltySteps})\n" +
@@ -79,7 +79,7 @@ public class BalanceResultPanel : MonoBehaviour
         else
         {
             txtDetalle.text =
-                $"Tiempo: {Mathf.RoundToInt(result.timeSeconds)} s   Errores: {result.errors}";
+                $"Tiempo: {Mathf.FloorToInt(result.timeSeconds)} s   Errores: {result.errors}";
         }
 
         txtScore.text = $"Puntaje: {result.score}";

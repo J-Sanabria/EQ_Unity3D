@@ -52,6 +52,9 @@ public class LevelTimerHUD : MonoBehaviour
         if (balanceStation == null || balanceStation.session == null)
             return false;
 
+        if (!balanceStation.session.HasStartedOnce)
+            return false;
+
         timeValue = balanceStation.session.elapsed;
         return true;
     }

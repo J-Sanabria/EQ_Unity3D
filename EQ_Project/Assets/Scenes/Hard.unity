@@ -2060,8 +2060,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c42e21bca0ba3924fad1afa7e7f84dd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  levelController: {fileID: 1140558175}
-  timerText: {fileID: 1068945053}
+  balanceStation: {fileID: 0}
+  timerTexts: []
+  hideWhenNoSession: 0
+  noSessionText: --:--
 --- !u!4 &297621527
 Transform:
   m_ObjectHideFlags: 0
@@ -3863,7 +3865,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 400, y: -272.4}
-  m_SizeDelta: {x: 300, y: 50}
+  m_SizeDelta: {x: 480.3, y: 38.1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &614714423
 MonoBehaviour:
@@ -6197,11 +6199,19 @@ MonoBehaviour:
   errorCount: 0
   elapsed: 0
   running: 0
+  hasStartedOnce: 0
   minCoef: 1
   maxCoef: 12
   baseScore: 1000
   penaltyPerError: 100
   minScore: 0
+  penaltyPerExtraStep: 10
+  penaltyPerTimeBlock: 10
+  timePenaltyBlockSeconds: 10
+  easyFreeExtraSteps: 5
+  mediumFreeExtraSteps: 3
+  hardFreeExtraSteps: 1
+  adjustmentCount: 0
 --- !u!114 &952445210
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10290,7 +10300,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 400, y: -77}
-  m_SizeDelta: {x: 300, y: 50}
+  m_SizeDelta: {x: 483.65, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1624565611
 MonoBehaviour:
@@ -13012,7 +13022,7 @@ MonoBehaviour:
     m_Top: 52
     m_Bottom: 267
   m_ChildAlignment: 4
-  m_Spacing: 47.7
+  m_Spacing: 15.8
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -13172,7 +13182,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 400, y: -174.7}
-  m_SizeDelta: {x: 300, y: 50}
+  m_SizeDelta: {x: 480.1, y: 153.1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2082201596
 MonoBehaviour:

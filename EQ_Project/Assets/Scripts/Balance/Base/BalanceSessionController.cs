@@ -48,6 +48,11 @@ namespace CB.Balance
         public int errorCount;
         public float elapsed;
         [SerializeField] private bool running;
+        [SerializeField] private bool hasStartedOnce;
+        public bool HasStartedOnce => hasStartedOnce;
+        public bool IsRunning => running;
+
+
 
         [Header("Coeficientes")]
         [SerializeField] private int minCoef = 1;
@@ -109,16 +114,30 @@ namespace CB.Balance
             {
                 _boundReactionId = rid;
                 InitFromReaction();
-                ResetMetrics(); // opcional: si NO quieres resetear tiempo/errores al re-entrar, solo hazlo aquí
-                running = true;
+                ResetMetrics();
+                running = false;
+                Debug.Log("[BalanceSessionController] BindStation -> nueva reacción, timer en false");
             }
             else
             {
-                // misma reacción: NO toques coeficientes
-                running = true;
-                OnEquationChanged?.Invoke(); // refresca HUD al entrar
+                running = false;
+                OnEquationChanged?.Invoke();
+                Debug.Log("[BalanceSessionController] BindStation -> misma reacción, timer en false");
             }
         }
+
+        public void StartSessionTimer()
+        {
+            hasStartedOnce = true;
+            running = true;
+        }
+
+        public void PauseSessionTimer()
+        {
+            running = false;
+            Debug.Log("[BalanceSessionController] Timer PAUSE");
+        }
+
         public void SetDifficulty(Difficulty difficulty)
         {
             currentDifficulty = difficulty;
@@ -156,6 +175,7 @@ namespace CB.Balance
             errorCount = 0;
             elapsed = 0f;
             adjustmentCount = 0;
+            hasStartedOnce = false;
         }
 
         // -------------------------
@@ -356,6 +376,7 @@ namespace CB.Balance
                 isTutorial = isTutorial
             };
 
+            running = false;
             OnSessionCompleted?.Invoke(result);
         }
 
@@ -363,7 +384,7 @@ namespace CB.Balance
         {
             InitFromReaction();
             ResetMetrics();
-            running = true;
+            running = false;
             OnEquationChanged?.Invoke();
         }
 
@@ -389,7 +410,7 @@ namespace CB.Balance
             for (int i = 0; i < r; i++) coefR[i] = minCoef;
 
             ResetMetrics();
-            running = true;
+            running = false;
 
             // IMPORTANT: marca como “misma reacción” para que al re-entrar no vuelva a clonar defaults raros
             _boundReactionId = Station.reaction.reactionId;

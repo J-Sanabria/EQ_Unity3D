@@ -111,11 +111,15 @@ public class LevelController : MonoBehaviour
         if (gameMode != null)
             gameMode.OnStateChanged -= HandleGameModeState;
     }
-
     private void HandleGameModeState(GameState state)
     {
         if (state == GameState.Exploration && phase == LevelPhase.Balance)
+        {
+            if (balanceStation != null && balanceStation.session != null)
+                balanceStation.session.PauseSessionTimer();
+
             phase = LevelPhase.Exploration;
+        }
     }
 
     private void EnsureScoreArray()
@@ -167,7 +171,7 @@ public class LevelController : MonoBehaviour
         totalScore = 0;
 
         levelElapsedTime = 0f;
-        levelTimerRunning = true;
+        levelTimerRunning = false;
         phase = LevelPhase.Exploration;
 
         routeShuffleController?.ResetRun();
@@ -299,7 +303,6 @@ public class LevelController : MonoBehaviour
         TryPlayReactionConceptTutorial(reaction);
 
     }
-
     public void RequestStartBalance(BalanceStation station)
     {
         if (phase != LevelPhase.Exploration)
@@ -316,6 +319,9 @@ public class LevelController : MonoBehaviour
 
         phase = LevelPhase.Balance;
         gameMode.EnterBalance(station);
+
+        if (balanceStation != null && balanceStation.session != null)
+            balanceStation.session.StartSessionTimer();
     }
 
     private void HandleSessionCompleted(BalanceResult result)
@@ -414,7 +420,7 @@ public class LevelController : MonoBehaviour
 
         var summary = new BalanceResult
         {
-            timeSeconds = levelElapsedTime,
+            timeSeconds = totalReactionTime,
             errors = totalErrors,
             score = totalScore,
             reactionId = ""
@@ -500,6 +506,11 @@ public class LevelController : MonoBehaviour
 
         if (ReactionHasParentheses(reaction))
             tutorial.PlayEventOnce(TutorialEvent.Parantesis);
+    }
+
+    public float GetTotalReactionElapsedTime()
+    {
+        return totalReactionTime;
     }
 
 }
