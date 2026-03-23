@@ -194,6 +194,9 @@ public class LevelController : MonoBehaviour
             balanceStation.session.ResetCoefsToOnes();
         }
 
+        if (balanceStation.session != null)
+            balanceStation.session.SetDifficulty(levelConfig.difficulty);
+
         if (equationHUD != null)
             equationHUD.SetReaction(balanceStation.reaction);
 
@@ -270,6 +273,10 @@ public class LevelController : MonoBehaviour
 
         if (balanceStation != null && balanceStation.session != null)
             balanceStation.session.BindStation(balanceStation);
+
+
+        if (balanceStation != null && balanceStation.session != null)
+            balanceStation.session.SetDifficulty(levelConfig.difficulty);
 
         phaseManager.ConfigureForReaction(balanceStation, levelConfig.difficulty);
 

@@ -10,6 +10,18 @@ namespace CB.Balance
         public float timeSeconds;
         public int errors;
         public int score;
+        public int stepsUsed;
+        public int idealSteps;
+        public int freeExtraSteps;
+        public int extraSteps;
+
+        public int baseScore;
+        public int penaltyErrors;
+        public int penaltySteps;
+        public int penaltyTime;
+
+        public float targetTimeSeconds;
+        public bool isTutorial;
     }
 
     public enum VerifyResult
@@ -46,6 +58,18 @@ namespace CB.Balance
         [SerializeField] private int penaltyPerError = 100;
         [SerializeField] private int minScore = 0;
 
+        [Header("Advanced Score")]
+        [SerializeField] private int penaltyPerExtraStep = 10;
+        [SerializeField] private int penaltyPerTimeBlock = 10;
+        [SerializeField] private float timePenaltyBlockSeconds = 10f;
+
+        [Header("Free Extra Steps By Difficulty")]
+        [SerializeField] private int easyFreeExtraSteps = 5;
+        [SerializeField] private int mediumFreeExtraSteps = 3;
+        [SerializeField] private int hardFreeExtraSteps = 1;
+
+        private Difficulty currentDifficulty = Difficulty.Tutorial;
+
         string _boundReactionId;
         public BalanceStation Station { get; private set; }
 
@@ -56,6 +80,7 @@ namespace CB.Balance
 
         public event Action<BalanceResult> OnSessionCompleted;
         public event Action OnEquationChanged;
+        public int adjustmentCount;
 
         void Update()
         {
@@ -94,7 +119,10 @@ namespace CB.Balance
                 OnEquationChanged?.Invoke(); // refresca HUD al entrar
             }
         }
-
+        public void SetDifficulty(Difficulty difficulty)
+        {
+            currentDifficulty = difficulty;
+        }
         void InitFromReaction()
         {
             if (Station == null || Station.reaction == null)
@@ -127,6 +155,7 @@ namespace CB.Balance
         {
             errorCount = 0;
             elapsed = 0f;
+            adjustmentCount = 0;
         }
 
         // -------------------------
@@ -156,6 +185,7 @@ namespace CB.Balance
             if (after == before) return;
 
             coefs[index] = after;
+            adjustmentCount++;
             OnEquationChanged?.Invoke();
             OnAdjustedApplied?.Invoke(side, index, before, after);
         }
@@ -234,21 +264,96 @@ namespace CB.Balance
         // -------------------------
         // Finalización
         // -------------------------
-        public void CompleteSession()
+
+        private int GetFreeExtraSteps()
         {
-            if (!running)
-                return;
-
-            running = false;
-
-            int score = Mathf.Max(minScore, baseScore - errorCount * penaltyPerError);
-
-            var result = new BalanceResult
+            switch (currentDifficulty)
             {
-                reactionId = Station != null && Station.reaction != null ? Station.reaction.reactionId : "",
+                case Difficulty.Easy: return easyFreeExtraSteps;
+                case Difficulty.Medium: return mediumFreeExtraSteps;
+                case Difficulty.Hard: return hardFreeExtraSteps;
+                case Difficulty.Tutorial:
+                default: return 0;
+            }
+        }
+
+        private float GetTargetTimeSeconds()
+        {
+            if (Station.reaction == null)
+                return 0f;
+
+            switch (currentDifficulty)
+            {
+                case Difficulty.Easy: return Station.reaction.easyTargetTime;
+                case Difficulty.Medium: return Station.reaction.mediumTargetTime;
+                case Difficulty.Hard: return Station.reaction.hardTargetTime;
+                case Difficulty.Tutorial:
+                default: return 0f;
+            }
+        }
+
+        private int CalculateTimePenalty(float elapsedSeconds, float targetSeconds)
+        {
+            if (currentDifficulty == Difficulty.Tutorial)
+                return 0;
+
+            if (targetSeconds <= 0f || elapsedSeconds <= targetSeconds)
+                return 0;
+
+            float extraTime = elapsedSeconds - targetSeconds;
+            int blocks = Mathf.FloorToInt(extraTime / timePenaltyBlockSeconds);
+            return blocks * penaltyPerTimeBlock;
+        }
+        private void CompleteSession()
+        {
+            bool isTutorial = currentDifficulty == Difficulty.Tutorial;
+
+            int finalScore;
+            int usedSteps = adjustmentCount;
+            int idealSteps = Station.reaction != null ? Station.reaction.idealSteps : 0;
+            int freeExtraSteps = isTutorial ? 0 : GetFreeExtraSteps();
+            int extraSteps = isTutorial ? 0 : Mathf.Max(0, usedSteps - idealSteps - freeExtraSteps);
+
+            int errorPenalty = isTutorial ? 0 : errorCount * penaltyPerError;
+            int stepPenalty = isTutorial ? 0 : extraSteps * penaltyPerExtraStep;
+
+            float targetTime = isTutorial
+                ? 0f
+                : GetTargetTimeSeconds();
+
+            int timePenalty = isTutorial
+                ? 0
+                : CalculateTimePenalty(elapsed, targetTime);
+
+            if (isTutorial)
+            {
+                finalScore = Station.reaction != null ? Station.reaction.tutorialFixedScore : baseScore;
+            }
+            else
+            {
+                finalScore = baseScore - errorPenalty - stepPenalty - timePenalty;
+                finalScore = Mathf.Max(minScore, finalScore);
+            }
+
+            BalanceResult result = new BalanceResult
+            {
+                reactionId = Station.reaction != null ? Station.reaction.reactionId : "",
                 timeSeconds = elapsed,
                 errors = errorCount,
-                score = score
+                score = finalScore,
+
+                stepsUsed = usedSteps,
+                idealSteps = idealSteps,
+                freeExtraSteps = freeExtraSteps,
+                extraSteps = extraSteps,
+
+                baseScore = isTutorial && Station.reaction != null ? Station.reaction.tutorialFixedScore : baseScore,
+                penaltyErrors = errorPenalty,
+                penaltySteps = stepPenalty,
+                penaltyTime = timePenalty,
+
+                targetTimeSeconds = targetTime,
+                isTutorial = isTutorial
             };
 
             OnSessionCompleted?.Invoke(result);
