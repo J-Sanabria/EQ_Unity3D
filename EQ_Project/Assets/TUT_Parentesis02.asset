@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e42884b0d50479b43955772fdf15b638, type: 3}
+  m_Name: TUT_Parentesis02
+  m_EditorClassIdentifier: 
+  stepId: Parentesis_02
+  speakerName: Dalton
+  portrait: {fileID: 1757353467, guid: e3e5f9b80c0931f4d824de19383442cd, type: 3}
+  autoCloseByTime: 0
+  autoCloseSeconds: 6
+  delayBeforeShow: 0
+  delayUsesUnscaledTime: 1
+  pauseWhileShowing: 1
+  text: "Cuando veas algo como (NO\u2083)\u2082, no es solo decoraci\xF3n. Todo lo
+    que est\xE1 dentro del par\xE9ntesis es un grupo y ese n\xFAmero afuera multiplica
+    TODO lo de adentro. "
+  hint: Enter - Continuar | Esc - Omitir
+  advanceMode: 0
+  requiredFlag: 

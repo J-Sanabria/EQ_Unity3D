@@ -15,3 +15,7 @@ MonoBehaviour:
   blockId: Parentesis
   steps:
   - {fileID: 11400000, guid: f628173f920ae75489cbdad396e1652c, type: 2}
+  - {fileID: 11400000, guid: cace22d8c467f694ebb7707bb8dd2ea2, type: 2}
+  - {fileID: 11400000, guid: dc25c291357a2e14591dc14bf4f94bb1, type: 2}
+  - {fileID: 11400000, guid: bfc5d45f5024d0b4c86c0b57a0b622ee, type: 2}
+  - {fileID: 11400000, guid: ca5caf102d469de4e8f4f2fe0600ed30, type: 2}

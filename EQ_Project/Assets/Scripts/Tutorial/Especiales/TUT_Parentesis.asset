@@ -12,16 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e42884b0d50479b43955772fdf15b638, type: 3}
   m_Name: TUT_Parentesis
   m_EditorClassIdentifier: 
-  stepId: intro_01
+  stepId: Parentesis_01
   speakerName: Dalton
   portrait: {fileID: 1757353467, guid: e3e5f9b80c0931f4d824de19383442cd, type: 3}
   autoCloseByTime: 0
   autoCloseSeconds: 6
-  delayBeforeShow: 0
+  delayBeforeShow: 1
   delayUsesUnscaledTime: 1
   pauseWhileShowing: 1
-  text: "Esta ecuaci\xF3n tiene parentesis, las ecuaciones con parentesis no se que
-    se les hace llor\xF3"
+  text: Bien, ahora mira esto con cuidado.
   hint: Enter - Continuar | Esc - Omitir
   advanceMode: 0
   requiredFlag: 
