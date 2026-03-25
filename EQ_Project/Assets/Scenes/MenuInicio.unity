@@ -13044,6 +13044,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Universe
       objectReference: {fileID: 0}
+    - target: {fileID: 732707363501231541, guid: 24f2f2cf14e67c44bbc91b689fc45261, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: de7e94629827c244eb5a993af7eeed77, type: 2}
+    - target: {fileID: 1150351664921127588, guid: 24f2f2cf14e67c44bbc91b689fc45261, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 2219b2565011c8845af99b2c3f9608b4, type: 3}
     - target: {fileID: 7349774992156175539, guid: 24f2f2cf14e67c44bbc91b689fc45261, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

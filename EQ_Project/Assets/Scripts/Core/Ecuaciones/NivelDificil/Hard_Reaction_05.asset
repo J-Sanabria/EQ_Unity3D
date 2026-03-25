@@ -22,3 +22,8 @@ MonoBehaviour:
   - H2O
   coefL: 0100000001000000
   coefR: 0100000001000000
+  idealSteps: 15
+  tutorialFixedScore: 1000
+  easyTargetTime: 120
+  mediumTargetTime: 90
+  hardTargetTime: 60

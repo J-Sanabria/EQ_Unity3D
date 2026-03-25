@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stepId: Parentesis_03
   speakerName: Dalton
-  portrait: {fileID: 1757353467, guid: e3e5f9b80c0931f4d824de19383442cd, type: 3}
+  portrait: {fileID: 21300000, guid: bb7930223a522314aa8680fb10854bce, type: 3}
   autoCloseByTime: 0
   autoCloseSeconds: 6
   delayBeforeShow: 0

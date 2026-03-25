@@ -21,3 +21,8 @@ MonoBehaviour:
   - Fe2O3
   coefL: 0100000001000000
   coefR: 01000000
+  idealSteps: 6
+  tutorialFixedScore: 1000
+  easyTargetTime: 120
+  mediumTargetTime: 90
+  hardTargetTime: 60
