@@ -5437,7 +5437,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &434975946
 Transform:
   m_ObjectHideFlags: 0
@@ -12751,8 +12751,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 0.17, z: 3.2944796}
-  m_Center: {x: 0.0014285743, y: 0.2, z: 0}
+  m_Size: {x: 2, y: 0.35, z: 3.2944796}
+  m_Center: {x: 0.0014285743, y: 0.31, z: 0}
 --- !u!1 &1065966158
 GameObject:
   m_ObjectHideFlags: 0
@@ -15066,8 +15066,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 0.17, z: 3.2944796}
-  m_Center: {x: 0.0014285743, y: 0.2, z: 0}
+  m_Size: {x: 2, y: 0.35, z: 3.2944796}
+  m_Center: {x: 0.0014285743, y: 0.31, z: 0}
 --- !u!1001 &1184933521
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22056,7 +22056,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0ccf2c1c083934744ae7e24900806276, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 22.54
+      value: 22.25
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 0ccf2c1c083934744ae7e24900806276, type: 3}
       propertyPath: m_LocalPosition.z
@@ -23056,8 +23056,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 0.17, z: 3.2944796}
-  m_Center: {x: 0.0014285743, y: 0.2, z: 0}
+  m_Size: {x: 2, y: 0.35, z: 3.2944796}
+  m_Center: {x: 0.0014285743, y: 0.31, z: 0}
 --- !u!1001 &1838281974
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24691,7 +24691,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1971270630
 Transform:
   m_ObjectHideFlags: 0
@@ -24940,7 +24940,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5c22fa7f259f80342850814368987c09, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 21.600574
+      value: 21.33
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5c22fa7f259f80342850814368987c09, type: 3}
       propertyPath: m_LocalPosition.z
